@@ -32,8 +32,10 @@ public final class Servermanager extends Plugin {
     @Override
     public void onEnable() {
         // Plugin startup logic
+        // TODO: load config implementation
         this.serverHandler = new ServerHandler(this);
         this.mySQLHandler = new MySQLHandler(db_name, db_url, db_username, db_password, this);
+        // TODO: load servers implementation
     }
 
     @Override
@@ -49,11 +51,19 @@ public final class Servermanager extends Plugin {
         File configFile = new File(getDataFolder(), "config.yml");
     }
 
+    private void loadServers() {
+        serverMap = mySQLHandler.loadAllServers();
+    }
+
     public HashMap<String, ServerObject> getServerMap() {
         return serverMap;
     }
 
     public ServerHandler getServerHandler() {
         return serverHandler;
+    }
+
+    public MySQLHandler getMySQLHandler() {
+        return mySQLHandler;
     }
 }

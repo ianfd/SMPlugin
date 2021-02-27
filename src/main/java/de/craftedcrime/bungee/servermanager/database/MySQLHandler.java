@@ -36,6 +36,8 @@ public class MySQLHandler {
         this.db_password = db_password;
         this.servermanager = servermanager;
         this.connection = connectToDatabase(this.db_name, this.db_url, this.db_username, this.db_password);
+        loadStatement();
+        initDatabase();
     }
 
     // establish connection to the database server
@@ -65,7 +67,7 @@ public class MySQLHandler {
         }
     }
 
-    public void initDatabase() {
+    private void initDatabase() {
         try {
             // create table for further usage
             connection.prepareCall("create table if not exists server_manager" +
