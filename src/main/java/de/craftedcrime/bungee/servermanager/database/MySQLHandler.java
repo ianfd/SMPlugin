@@ -115,16 +115,19 @@ public class MySQLHandler {
 
     public void addServer(ServerObject serverObject) {
         if (!serverExists(serverObject.getServerName())) {
-
             try {
                 PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO server_manager (server_name, server_ip, server_port, server_is_restricted) VALUES (?,?,?,?)");
+                preparedStatement.setString(1, serverObject.getServerName());
+                preparedStatement.setString(2, serverObject.getIpAddress());
+                preparedStatement.setInt(3, serverObject.getPort());
+                preparedStatement.setBoolean(4, serverObject.isRestrictedAccess());
+                preparedStatement.execute();
             } catch (SQLException throwables) {
+
                 throwables.printStackTrace();
             }
-
         }
     }
-
 
 
 }
