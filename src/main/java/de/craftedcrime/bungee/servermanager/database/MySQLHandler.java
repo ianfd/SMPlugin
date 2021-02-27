@@ -43,7 +43,7 @@ public class MySQLHandler {
         try {
             return DriverManager.getConnection("jdbc:mysql://" + db_url + "/" + db_name + "?user=" + db_username + "&password=" + db_password);
         } catch (SQLException throwables) {
-            servermanager.getLogger().log(Level.SEVERE, "Failed to connect to the database.");
+            servermanager.getLogger().log(Level.WARNING, "Failed to connect to the database.");
             servermanager.getProxy().stop("A non valid database connection has been entered. Please revisit you settings.");
             throwables.printStackTrace();
         }
@@ -54,7 +54,7 @@ public class MySQLHandler {
         try {
             this.statement = connection.createStatement();
         } catch (SQLException throwables) {
-            servermanager.getLogger().log(Level.SEVERE, "Failed to create statement! (please check your db-config)");
+            servermanager.getLogger().log(Level.WARNING, "Failed to create statement! (please check your db-config)");
             throwables.printStackTrace();
         }
     }
@@ -77,7 +77,7 @@ public class MySQLHandler {
                     "    server_is_restricted tinyint(1) default 0 not null)").execute();
 
         } catch (SQLException throwables) {
-            servermanager.getLogger().log(Level.SEVERE, "Failed to execute the init statement, to create the necessary tables. Please check your database configuration!");
+            servermanager.getLogger().log(Level.WARNING, "Failed to execute the init statement, to create the necessary tables. Please check your database configuration!");
             throwables.printStackTrace();
         }
     }
@@ -113,6 +113,7 @@ public class MySQLHandler {
         return false;
     }
 
+    // adds a minecraft server to the context
     public void addServer(ServerObject serverObject) {
         if (!serverExists(serverObject.getServerName())) {
             try {
@@ -122,12 +123,30 @@ public class MySQLHandler {
                 preparedStatement.setInt(3, serverObject.getPort());
                 preparedStatement.setBoolean(4, serverObject.isRestrictedAccess());
                 preparedStatement.execute();
+                servermanager.getLogger().log(Level.INFO, "Successfully saved '" + serverObject.getServerName() + "' to the database.");
             } catch (SQLException throwables) {
-
+                servermanager.getLogger().log(Level.WARNING, "Failed to save the new server '" + serverObject.getServerName() + "' into the database. Please check your db-config!");
                 throwables.printStackTrace();
             }
         }
     }
+
+    // deletes a minecraft server from the context
+    public void deleteServer(String servername) {
+        if (serverExists(servername)) {
+            try {
+                PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM server_manager WHERE server_name = ?");
+                preparedStatement.setString(1, servername);
+                preparedStatement.execute();
+                servermanager.getLogger().log(Level.INFO, "Successfully deleted '" + servername + "' from the database.");
+            } catch (SQLException throwables) {
+                servermanager.getLogger().log(Level.WARNING, "Failed to delete the server '" + servername + "' from the database. Please check your db-config.");
+                throwables.printStackTrace();
+            }
+        }
+    }
+
+
 
 
 }
