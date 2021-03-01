@@ -70,13 +70,8 @@ public class MySQLHandler {
     private void initDatabase() {
         try {
             // create table for further usage
-            connection.prepareCall("create table if not exists server_manager" +
-                    "(\n" +
-                    "    server_id            int auto_increment primary key," +
-                    "    server_name          varchar(64)          not null," +
-                    "    server_ip            varchar(64)          not null," +
-                    "    server_port          int                  not null," +
-                    "    server_is_restricted tinyint(1) default 0 not null)").execute();
+            connection.prepareCall("create table if not exists server_manager (server_id int auto_increment primary key, server_name varchar(64) not null,server_ip varchar(64) not null, " +
+                    "server_port int not null, server_is_restricted tinyint(1) default 0 not null)").execute();
 
         } catch (SQLException throwables) {
             servermanager.getLogger().log(Level.WARNING, "Failed to execute the init statement, to create the necessary tables. Please check your database configuration!");
@@ -87,7 +82,7 @@ public class MySQLHandler {
     public HashMap<String, ServerObject> loadAllServers() {
         HashMap<String, ServerObject> smret = new HashMap<>();
         try {
-            ResultSet rs = statement.executeQuery("SELECT  * FROM server_manager"); // get all entries from the server_manager table
+            ResultSet rs = statement.executeQuery("SELECT * FROM server_manager"); // get all entries from the server_manager table
             while (rs.next()) {
                 ServerObject serverObject = new ServerObject();
                 serverObject.setServer_id(rs.getInt("server_id"));
@@ -141,14 +136,14 @@ public class MySQLHandler {
                 preparedStatement.setString(1, servername);
                 preparedStatement.execute();
                 servermanager.getLogger().log(Level.INFO, "Successfully deleted '" + servername + "' from the database.");
+                servermanager.getServerMap().remove(servername);
+                servermanager.getLogger().log(Level.INFO, "Successfully deleted '" + servername + "' from internal context.");
             } catch (SQLException throwables) {
                 servermanager.getLogger().log(Level.WARNING, "Failed to delete the server '" + servername + "' from the database. Please check your db-config.");
                 throwables.printStackTrace();
             }
         }
     }
-
-
 
 
 }

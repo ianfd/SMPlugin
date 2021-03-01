@@ -11,7 +11,6 @@ import java.util.HashMap;
 public final class Servermanager extends Plugin {
 
     // General Plugin to orchestrate new servers, without reloading the entire server !
-
     private HashMap<String, ServerObject> serverMap = new HashMap<>();
     private ServerHandler serverHandler;
 
