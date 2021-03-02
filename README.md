@@ -6,3 +6,6 @@ TODO:
 - insert commands into bungee.yml
 - aaaaand any other necessary stuff \
 ..... further comes soon 
+IMPORT method to import all servers from the default bungeecord context
+  
+Orchestration stuff haha added in the future !!

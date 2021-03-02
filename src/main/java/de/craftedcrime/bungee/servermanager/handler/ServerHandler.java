@@ -22,51 +22,142 @@ public class ServerHandler {
         this.servermanager = servermanager;
     }
 
-    public void addServer(ProxiedPlayer proxiedPlayer, ServerObject serverObject) {
-        if (serverAlreadyRegistered(serverObject.getServerName())) {
-            proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cA server with this name is §l§calready §r§cregistered. "));
-            proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cYou can lookup all registered servers via: §6/sm listall "));
+    public void addServer(ProxiedPlayer proxiedPlayer, ServerObject serverObject, boolean lobby) {
+        if (servermanager.getMySQLHandler().serverExists(serverObject.getServerName())) {
+            if (serverAlreadyRegistered(serverObject.getServerName())) {
+                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cA server with this name is §l§calready §r§cregistered and §l§cactive§r§c."));
+            } else {
+                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cA server with this name is §l§calready §r§cregistered, but §e§lINACTIVE§r§c."));
+            }
+            proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §eYou can lookup all registered servers via: §6§l/sm list-all "));
             return;
         }
-        ServerInfo serverInfo = servermanager.getProxy().constructServerInfo(serverObject.getServerName(), new InetSocketAddress(serverObject.getIpAddress(), serverObject.getPort()), "Just another server", serverObject.isRestrictedAccess());
+        boolean restricted = true;
+        if (serverObject.getAccessType().equalsIgnoreCase("all")) restricted = false;
+        ServerInfo serverInfo = servermanager.getProxy().constructServerInfo(serverObject.getServerName(), new InetSocketAddress(serverObject.getIpAddress(), serverObject.getPort()), "Just another server", restricted);
         servermanager.getProxy().getServers().put(serverObject.getServerName(), serverInfo);
+        servermanager.getMySQLHandler().addServer(serverObject, lobby);
         proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've added the server §7'" + serverObject.getServerName() + "§7' §a with the address §7' §b" + serverObject.getIpAddress() + ":" + serverObject.getPort() + " §7' to the context!"));
         proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aSee more information via: §6/sm info §c" + serverObject.getServerName()));
+    }
+
+    public void deactivateServer(ProxiedPlayer proxiedPlayer, String servername) {
+        if (serverAlreadyRegistered(servername) && serverIsOrchestrated(servername)) {
+            if (sendToFallbackServer(servername)) {
+                servermanager.getProxy().getServers().remove(servername);
+                servermanager.getMySQLHandler().deactivateServer(servername, serverIsLobby(servername));
+                if (serverIsLobby(servername)) {
+                    servermanager.getLobbyMap().remove(servername);
+                    proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've successfully deactivated the lobby §7'§e" + servername + "§7'§a."));
+                } else {
+                    servermanager.getNoLobbiesMap().remove(servername);
+                    proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've successfully server the lobby §7'§e" + servername + "§7'§a."));
+                }
+            } else {
+                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cFailed to deactivate the server §7'§e" + servername + "§7', §cbecause no other server is available as a fallback server. \n" +
+                        "§eHas at least one server the access level 'all'. See the tutorial for more help: URL TBA"));
+            }
+        } else {
+            if (servermanager.getMySQLHandler().serverExists(servername)) {
+                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThis server can't be deactivated because it's already inactive."));
+            } else {
+                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThis server can't be deactivated because it's not orchestrated."));
+            }
+        }
+    }
+
+    public boolean serverIsLobby(String servername) {
+        return servermanager.getLobbyMap().containsKey(servername);
     }
 
     public boolean serverAlreadyRegistered(String servername) {
         return servermanager.getProxy().getServers().containsKey(servername);
     }
 
+    public boolean serverIsOrchestrated(String servername) {
+        return servermanager.getNoLobbiesMap().containsKey(servername) || servermanager.getLobbyMap().containsKey(servername);
+    }
+
     public void deleteServer(ProxiedPlayer proxiedPlayer, String servername) {
         // general functionality of this method
         if (serverAlreadyRegistered(servername)) {
-
-            String fallbackServerName = null;
-            for (String s : servermanager.getProxy().getConfigurationAdapter().getListeners().stream().findFirst().get().getServerPriority()) {
-                if (!s.equalsIgnoreCase(servername)) {
-                    fallbackServerName = s;
-                }
-            }
-            if (fallbackServerName != null) {
-                ServerInfo targetServer = servermanager.getProxy().getServers().getOrDefault(fallbackServerName, null);
-                for (ProxiedPlayer pp : servermanager.getProxy().getServers().get(servername).getPlayers()) {
-                    pp.connect(targetServer);
-                    pp.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've been sent to the default fallback server."));
-                }
-                servermanager.getMySQLHandler().deleteServer(servername);
-            } else {
-                if (proxiedPlayer != null) {
-                    proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cNo fallback server has been found. No server can be deleted, until another server is defined."));
+            if (serverIsOrchestrated(servername)) {
+                boolean isLobby = servermanager.getLobbyMap().containsKey(servername);
+                if (isLobby) {
+                    servermanager.getLogger().log(Level.INFO, "Attention, you're about to delete a lobby!");
+                    if (servermanager.getLobbyMap().size() == 1) {
+                        if (proxiedPlayer != null)
+                            proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cFailed to delete the lobby with the name §7'§e" + servername + "§7'§c, because" +
+                                    " no other lobby has been defined. §bYou have to define another lobby to delete this one."));
+                    } else {
+                        if (sendToFallbackServer(servername)) {
+                            servermanager.getProxy().getServers().remove(servername);
+                            servermanager.getLobbyMap().remove(servername);
+                            servermanager.getMySQLHandler().deleteServer(servername, true);
+                            if (proxiedPlayer != null)
+                                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've successfully deleted the lobby §7'§e" + servername + "§7' §afrom " +
+                                        "the context."));
+                        } else {
+                            if (proxiedPlayer != null) {
+                                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cFailed to delete the server! This could be, because no other server can be a default fallback server. \n" +
+                                        "§8| §aServerManager §8| §eHas at least one server the access level 'all'? See the tutorial for more help: URL TBA"));
+                            }
+                        }
+                    }
                 } else {
-                    servermanager.getLogger().log(Level.WARNING, "Failed to delete the server '" + servername + "', because no fallback server is defined. No server can be deleted until another server is defined.");
+                    if (sendToFallbackServer(servername)) {
+                        servermanager.getProxy().getServers().remove(servername);
+                        servermanager.getNoLobbiesMap().remove(servername);
+                        servermanager.getMySQLHandler().deleteServer(servername, false);
+                        if (proxiedPlayer != null)
+                            proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've successfully deleted the server §7'§e" + servername + "§7' §afrom the context."));
+                    } else {
+                        if (proxiedPlayer != null)
+                            proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cFailed to delete the server! This could be, because no other server can be a default fallback server. \n" +
+                                    "§8| §aServerManager §8| §eHas at least one server the access level 'all'? See the tutorial for more help: URL TBA"));
+                    }
+                }
+            } else {
+                if (proxiedPlayer != null)
+                    proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cFailed to delete this server, because the server is not orchestrated by the ServerManager " +
+                            "plugin, see more information on how to orchestrate a server under: URL TBA"));
+            }
+        } else {
+            if (proxiedPlayer != null) proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cFailed to delete this server, because this server is not registered."));
+        }
+    }
+
+    public boolean sendToFallbackServer(String fromServername) {
+        String fallBackServerName = null;
+        if (servermanager.getLobbyMap().isEmpty()) {
+            for (ServerObject so : servermanager.getNoLobbiesMap().values()) {
+                if (!so.getServerName().equalsIgnoreCase(fromServername) && so.getAccessType().equalsIgnoreCase("all")) {
+                    fallBackServerName = so.getServerName();
+                    break;
                 }
             }
-
         } else {
-            if (proxiedPlayer != null) proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThere is no server registered under the name §7'§e" + servername + "§7'§c."));
+            for (ServerObject so : servermanager.getLobbyMap().values()) {
+                if (!so.getServerName().equalsIgnoreCase(fromServername) && so.getAccessType().equalsIgnoreCase("all")) {
+                    fallBackServerName = so.getServerName();
+                    break;
+                }
+            }
         }
-
+        if (fallBackServerName == null) {
+            return false;
+        } else {
+            ServerInfo targetServer = servermanager.getProxy().getServers().getOrDefault(fallBackServerName, null);
+            if (targetServer != null) {
+                for (ProxiedPlayer pp : servermanager.getProxy().getServerInfo(fromServername).getPlayers()) {
+                    pp.connect(targetServer);
+                    pp.sendMessage(new TextComponent("§8| §aServerManager §8| §eYou've been sent to the default fallback server, because the server you've been connected to has been deleted."));
+                }
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
 

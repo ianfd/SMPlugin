@@ -11,22 +11,25 @@ public class ServerObject {
     private String serverName;
     private String ipAddress;
     private int port;
-    private boolean restrictedAccess = false;
+    private String accessType;
 
-    public ServerObject(String serverName, String ipAddress, int port, boolean restrictedAccess) {
+    public ServerObject(int server_id, String serverName, String ipAddress, int port, String accessType) {
+        this.server_id = server_id;
         this.serverName = serverName;
         this.ipAddress = ipAddress;
         this.port = port;
-        this.restrictedAccess = restrictedAccess;
-    }
-
-    public ServerObject(String serverName, String ipAddress, int port) {
-        this.serverName = serverName;
-        this.ipAddress = ipAddress;
-        this.port = port;
+        this.accessType = accessType;
     }
 
     public ServerObject() {
+    }
+
+    public int getServer_id() {
+        return server_id;
+    }
+
+    public void setServer_id(int server_id) {
+        this.server_id = server_id;
     }
 
     public String getServerName() {
@@ -53,19 +56,11 @@ public class ServerObject {
         this.port = port;
     }
 
-    public boolean isRestrictedAccess() {
-        return restrictedAccess;
+    public String getAccessType() {
+        return accessType;
     }
 
-    public void setRestrictedAccess(boolean restrictedAccess) {
-        this.restrictedAccess = restrictedAccess;
-    }
-
-    public int getServer_id() {
-        return server_id;
-    }
-
-    public void setServer_id(int server_id) {
-        this.server_id = server_id;
+    public void setAccessType(String accessType) {
+        this.accessType = accessType;
     }
 }

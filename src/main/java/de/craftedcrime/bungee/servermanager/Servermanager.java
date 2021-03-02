@@ -3,16 +3,25 @@ package de.craftedcrime.bungee.servermanager;
 import de.craftedcrime.bungee.servermanager.database.MySQLHandler;
 import de.craftedcrime.bungee.servermanager.handler.ServerHandler;
 import de.craftedcrime.bungee.servermanager.models.ServerObject;
+import de.craftedcrime.bungee.servermanager.utils.IPValidationUtils;
 import net.md_5.bungee.api.plugin.Plugin;
+import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.logging.Level;
 
 public final class Servermanager extends Plugin {
 
     // General Plugin to orchestrate new servers, without reloading the entire server !
-    private HashMap<String, ServerObject> serverMap = new HashMap<>();
+    private HashMap<String, ServerObject> lobbyMap = new HashMap<>();
+    private HashMap<String, ServerObject> noLobbiesMap = new HashMap<>();
     private ServerHandler serverHandler;
+    private Configuration configuration;
 
     // -------------- VARIABLES -------------- //
     // ------ DATABASE ------ //
@@ -27,11 +36,15 @@ public final class Servermanager extends Plugin {
     // ------ MySQL Handler ------ //
     private MySQLHandler mySQLHandler;
 
+    // -------------- UTILS -------------- //
+    // ------ IP Validation Utils ------ //
+    private IPValidationUtils ipValidationUtils;
 
     @Override
     public void onEnable() {
         // Plugin startup logic
         // TODO: load config implementation
+        ipValidationUtils = new IPValidationUtils();
         this.serverHandler = new ServerHandler(this);
         this.mySQLHandler = new MySQLHandler(db_name, db_url, db_username, db_password, this);
         // TODO: load servers implementation
@@ -48,14 +61,64 @@ public final class Servermanager extends Plugin {
         }
 
         File configFile = new File(getDataFolder(), "config.yml");
+        if (!configFile.exists()) {
+            try {
+                Files.copy(getResourceAsStream("config.yml"), configFile.toPath());
+                configFile = new File(getDataFolder(), "config.yml");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            configuration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(configFile);
+            // ------------------------------ MYSQL LOAD CONFIG ------------------------------
+            // ---------- Load HOSTNAME and PORT ----------
+            if ((configuration.get("server.connections.mysql.hostname") != null) && (configuration.get("server.connections.mysql.port") != null)) {
+                this.db_url = "jdbc:mysql://" + configuration.getString("server.connections.mysql.hostname") + ":" + configuration.getInt("server.connections.mysql.hostname");
+            } else {
+                getProxy().stop("§4ERROR! §cUnable to load MySQL config, because hostname and/or port is not given. Without that the ServerManager Plugin cant be used!");
+            }
+
+            // ---------- Load USERNAME ----------
+            if (configuration.get("server.connections.mysql.username") != null) {
+                this.db_username = configuration.getString("server.connections.mysql.username");
+            } else {
+                getProxy().stop("§4ERROR! §cUnable to load MySQL config, because the username is not given, it's necessary.");
+            }
+
+            // ---------- Load PASSWORD ----------
+            if (configuration.get("server.connections.mysql.password") != null) {
+                this.db_password = configuration.getString("server.connections.mysql.password");
+            } else {
+                getLogger().log(Level.FINER, "You haven set a mysql password. This can work, but it's highly recommended to use one!!");
+                this.db_password = "";
+            }
+
+
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            getProxy().stop("§4ERROR! §cUnable to load the configuration file! Please contact the developer with log details, if you don't know what to do!");
+        }
+
+
+
+        // loading the configuration
+
     }
 
     private void loadServers() {
-        serverMap = mySQLHandler.loadAllServers();
+
     }
 
-    public HashMap<String, ServerObject> getServerMap() {
-        return serverMap;
+    public HashMap<String, ServerObject> getLobbyMap() {
+        return lobbyMap;
+    }
+
+    public HashMap<String, ServerObject> getNoLobbiesMap() {
+        return noLobbiesMap;
     }
 
     public ServerHandler getServerHandler() {

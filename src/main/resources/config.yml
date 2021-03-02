@@ -1,0 +1,35 @@
+# The default config for the ServerManager (Enables possibility to orchestrate servers)
+# Documentation and Tutorials are available under: URL TBA
+server:
+  # This enables the orchestration feature of ServerManager. (TBD) PLEASE READ THIS BEFORE YOU ACTIVATE THIS FEATURE -> URL TBA
+  orchestration: false
+  connections:
+    # This is the database connection config. The database is used to store data about the registered servers.
+    mysql:
+      # The hostname is the IP of the server. E.g.: 192.168.0.1, if the mysql-server is running on the same server as the BungeeCord-server you can use 'localhost' as the hostname.
+      hostname: localhost
+      # The default port for all MySQL / MariaDB servers is: 3306
+      port: 3306
+      # The name of the database server manager plugin is going to use.
+      database:
+      # The name of the database user. This user muss have access to the mentioned database above.
+      username:
+      # The password for the user above. It's recommended to use one!
+      password:
+    # This is used for the orchestration feature of the ServerManager and if you're using the ServerManager on spigot. Without a redis server, this the ServerManager Plugin (on spigot) is read-only!
+    redis:
+      # The hostname is the IP of the server. E.g.: 192.168.0.1, if the redis-server is running on the same server as the BungeeCord-server you can use 'localhost' as the hostname. (TBD)
+      hostname: localhost
+      # The default port for redis-servers is 6379
+      port: 6379
+      # The database the server manager plugin should be using. E.g.: servermanager if no other databases on redis are used.
+      database:
+      # If you protect your redis db, type the password here.
+      password:
+stats:
+  # Stats are used to determine how many players and servers are using this plugin. (TBD)
+  # These stats are visible for everyone!
+  # What's logged? What stats do I use?
+  # Look here for more information -> URL TBA
+  enabled: false
+  id:
