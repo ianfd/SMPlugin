@@ -7,7 +7,7 @@ server:
     # This is the database connection config. The database is used to store data about the registered servers.
     mysql:
       # The hostname is the IP of the server. E.g.: 192.168.0.1, if the mysql-server is running on the same server as the BungeeCord-server you can use 'localhost' as the hostname.
-      hostname: localhost
+      hostname: 10.10.2.2
       # The default port for all MySQL / MariaDB servers is: 3306
       port: 3306
       # The name of the database server manager plugin is going to use.

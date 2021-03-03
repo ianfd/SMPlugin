@@ -1,4 +1,5 @@
 name: Servermanager
 version: ${project.version}
-main: de.craftedcrime.bungee.servermanager.servermanager.Servermanager
+main: de.craftedcrime.bungee.servermanager.Servermanager
 description: Servermanager to register and unregister servers from bungeecord
+author: CraftedCrime

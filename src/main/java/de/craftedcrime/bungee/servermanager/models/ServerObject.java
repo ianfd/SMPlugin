@@ -12,6 +12,7 @@ public class ServerObject {
     private String ipAddress;
     private int port;
     private String accessType;
+    private boolean active;
 
     public ServerObject(int server_id, String serverName, String ipAddress, int port, String accessType) {
         this.server_id = server_id;
@@ -62,5 +63,13 @@ public class ServerObject {
 
     public void setAccessType(String accessType) {
         this.accessType = accessType;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

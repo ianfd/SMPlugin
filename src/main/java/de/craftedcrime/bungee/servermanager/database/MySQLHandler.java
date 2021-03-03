@@ -42,6 +42,7 @@ public class MySQLHandler {
 
     // establish connection to the database server
     private Connection connectToDatabase(String db_name, String db_url, String db_username, String db_password) {
+        servermanager.getLogger().log(Level.INFO, "MySQL settings: " + db_url + "," + db_name + "," + db_username + "," + db_password);
         try {
             return DriverManager.getConnection("jdbc:mysql://" + db_url + "/" + db_name + "?user=" + db_username + "&password=" + db_password);
         } catch (SQLException throwables) {
@@ -82,7 +83,7 @@ public class MySQLHandler {
         }
     }
 
-    public HashMap<String, ServerObject> loadAllLobbies() {
+    public HashMap<String, ServerObject> loadAllActiveLobbies() {
         HashMap<String, ServerObject> smret = new HashMap<>();
         try {
             ResultSet rs = statement.executeQuery("SELECT * FROM server_manager_lobby WHERE lobby_active = true"); // get all entries from the server_manager_lobbies table
@@ -95,6 +96,7 @@ public class MySQLHandler {
                 serverObject.setAccessType(rs.getString("lobby_access_type"));
                 smret.put(serverObject.getServerName(), serverObject);
             }
+            rs.close();
         } catch (SQLException throwables) {
             throwables.printStackTrace();
             servermanager.getLogger().log(Level.WARNING, "Failed to load all lobby servers. Please check your database config.");
@@ -102,7 +104,29 @@ public class MySQLHandler {
         return smret;
     }
 
-    public HashMap<String, ServerObject> loadAllNonLobbies() {
+    public HashMap<String, ServerObject> loadAllLobbies() {
+        HashMap<String, ServerObject> smret = new HashMap<>();
+        try {
+            ResultSet rs = statement.executeQuery("SELECT * FROM server_manager_lobby"); // get all entries from the server_manager_lobbies table
+            while (rs.next()) {
+                ServerObject serverObject = new ServerObject();
+                serverObject.setServer_id(rs.getInt("lobby_id"));
+                serverObject.setServerName(rs.getString("lobby_name"));
+                serverObject.setIpAddress(rs.getString("lobby_ip"));
+                serverObject.setPort(rs.getInt("lobby_port"));
+                serverObject.setAccessType(rs.getString("lobby_access_type"));
+                serverObject.setActive(rs.getBoolean("lobby_active"));
+                smret.put(serverObject.getServerName(), serverObject);
+            }
+            rs.close();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+            servermanager.getLogger().log(Level.WARNING, "Failed to load all lobby servers. Please check your database config.");
+        }
+        return smret;
+    }
+
+    public HashMap<String, ServerObject> loadAllNonActiveLobbies() {
         HashMap<String, ServerObject> smret = new HashMap<>();
         try {
             ResultSet rs = statement.executeQuery("SELECT * FROM server_manager WHERE server_active = true"); // get all entries from the server_manager table
@@ -115,6 +139,29 @@ public class MySQLHandler {
                 serverObject.setAccessType(rs.getString("server_access_type"));
                 smret.put(serverObject.getServerName(), serverObject);
             }
+            rs.close();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+            servermanager.getLogger().log(Level.WARNING, "Failed to load all non lobby servers. Please check your database config.");
+        }
+        return smret;
+    }
+
+    public HashMap<String, ServerObject> loadAllNonLobbies() {
+        HashMap<String, ServerObject> smret = new HashMap<>();
+        try {
+            ResultSet rs = statement.executeQuery("SELECT * FROM server_manager"); // get all entries from the server_manager table
+            while (rs.next()) {
+                ServerObject serverObject = new ServerObject();
+                serverObject.setServer_id(rs.getInt("server_id"));
+                serverObject.setServerName(rs.getString("server_name"));
+                serverObject.setIpAddress(rs.getString("server_ip"));
+                serverObject.setPort(rs.getInt("server_port"));
+                serverObject.setAccessType(rs.getString("server_access_type"));
+                serverObject.setActive(rs.getBoolean("server_active"));
+                smret.put(serverObject.getServerName(), serverObject);
+            }
+            rs.close();
         } catch (SQLException throwables) {
             throwables.printStackTrace();
             servermanager.getLogger().log(Level.WARNING, "Failed to load all non lobby servers. Please check your database config.");
@@ -126,8 +173,11 @@ public class MySQLHandler {
         boolean pre = false;
         try {
             ResultSet rs = statement.executeQuery("SELECT * FROM server_manager WHERE server_name = '" + servername + "'");
+            pre = rs.next();
+            rs.close();
             ResultSet rsl = statement.executeQuery("SELECT * FROM server_manager_lobby WHERE lobby_name = '" + servername + "'");
-            pre = rs.next() || rsl.next();
+            pre = pre || rsl.next();
+            rs.close();
         } catch (SQLException throwables) {
             throwables.printStackTrace();
             servermanager.getLogger().log(Level.WARNING, "Failed to check if a server exists. Check your database config.");

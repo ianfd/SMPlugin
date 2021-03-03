@@ -1,8 +1,10 @@
 package de.craftedcrime.bungee.servermanager;
 
+import de.craftedcrime.bungee.servermanager.commands.ServerCommand;
 import de.craftedcrime.bungee.servermanager.database.MySQLHandler;
 import de.craftedcrime.bungee.servermanager.handler.ServerHandler;
 import de.craftedcrime.bungee.servermanager.models.ServerObject;
+import de.craftedcrime.bungee.servermanager.utils.GeneralUtils;
 import de.craftedcrime.bungee.servermanager.utils.IPValidationUtils;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
@@ -39,15 +41,23 @@ public final class Servermanager extends Plugin {
     // -------------- UTILS -------------- //
     // ------ IP Validation Utils ------ //
     private IPValidationUtils ipValidationUtils;
+    // ------ General Utils ------ //
+    private GeneralUtils generalUtils;
 
     @Override
     public void onEnable() {
         // Plugin startup logic
         // TODO: load config implementation
         ipValidationUtils = new IPValidationUtils();
+        generalUtils = new GeneralUtils();
+        loadConfig();
         this.serverHandler = new ServerHandler(this);
         this.mySQLHandler = new MySQLHandler(db_name, db_url, db_username, db_password, this);
         // TODO: load servers implementation
+
+
+        // register all commands below here
+        getProxy().getPluginManager().registerCommand(this, new ServerCommand(this));
     }
 
     @Override
@@ -75,9 +85,16 @@ public final class Servermanager extends Plugin {
             // ------------------------------ MYSQL LOAD CONFIG ------------------------------
             // ---------- Load HOSTNAME and PORT ----------
             if ((configuration.get("server.connections.mysql.hostname") != null) && (configuration.get("server.connections.mysql.port") != null)) {
-                this.db_url = "jdbc:mysql://" + configuration.getString("server.connections.mysql.hostname") + ":" + configuration.getInt("server.connections.mysql.hostname");
+                this.db_url = configuration.getString("server.connections.mysql.hostname") + ":" + configuration.getInt("server.connections.mysql.port");
             } else {
                 getProxy().stop("§4ERROR! §cUnable to load MySQL config, because hostname and/or port is not given. Without that the ServerManager Plugin cant be used!");
+            }
+
+            // ---------- Load DATABASE ----------
+            if (configuration.get("server.connections.mysql.database") != null) {
+                this.db_name = configuration.getString("server.connections.mysql.database");
+            } else {
+                getProxy().stop("§4ERROR! §cUnable to load MySQL config, because the database is not given, it's necessary.");
             }
 
             // ---------- Load USERNAME ----------
@@ -96,13 +113,10 @@ public final class Servermanager extends Plugin {
             }
 
 
-
-
         } catch (IOException e) {
             e.printStackTrace();
             getProxy().stop("§4ERROR! §cUnable to load the configuration file! Please contact the developer with log details, if you don't know what to do!");
         }
-
 
 
         // loading the configuration
@@ -127,5 +141,9 @@ public final class Servermanager extends Plugin {
 
     public MySQLHandler getMySQLHandler() {
         return mySQLHandler;
+    }
+
+    public GeneralUtils getGeneralUtils() {
+        return generalUtils;
     }
 }
