@@ -66,12 +66,12 @@ public class ServerCommand extends Command {
                         proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cFailed to add server, because §8'§e" + args[3] + "§8' §c(Port) is not a number!"));
                     }
                 }
+            } else {
+                displayHelp(proxiedPlayer);
             }
         } else {
             sender.sendMessage(new TextComponent("§8| §aServerManager §8| §cUsage from the console is currently not supported."));
         }
-
-
     }
 
     private void displayHelp(ProxiedPlayer proxiedPlayer) {
@@ -79,12 +79,11 @@ public class ServerCommand extends Command {
     }
 
     private void displayAllServerInfo(ProxiedPlayer proxiedPlayer) {
-
         proxiedPlayer.sendMessage(new TextComponent("§8-=-=-=-=- §7| §a§lServerManager §r§7| §8-=-=-=-=-"));
         proxiedPlayer.sendMessage(new TextComponent("§8»»»»»»»»»» §6§lLOBBIES: §8««««««««««"));
         Collection<ServerObject> lobbies = servermanager.getMySQLHandler().loadAllLobbies().values();
         if (lobbies.isEmpty()) {
-            proxiedPlayer.sendMessage(new TextComponent("§8| §a §b §a §b §cNo lobbies are r;egistered."));
+            proxiedPlayer.sendMessage(new TextComponent("§8| §a §b §a §b §cNo lobbies are registered."));
         } else {
             proxiedPlayer.sendMessage(new TextComponent("§8| §6§l#ID §r§8| §9§lSERVERNAME §r§8| §a§lIP-ADDRESS §r§8| §b§lPORT §r§8| §d§lACCESS LEVEL §r§8| §e§lACTIVE"));
             for (ServerObject serverObject : lobbies) {

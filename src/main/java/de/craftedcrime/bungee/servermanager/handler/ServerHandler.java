@@ -10,8 +10,10 @@ import de.craftedcrime.bungee.servermanager.models.ServerObject;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.connection.Server;
 
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.logging.Level;
 
 public class ServerHandler {
@@ -66,6 +68,22 @@ public class ServerHandler {
         }
     }
 
+    public HashMap<String, ServerObject> initAllLobbies() {
+        HashMap<String, ServerObject> lobbies = servermanager.getMySQLHandler().loadAllActiveLobbies();
+        for (ServerObject lobby : lobbies.values()) {
+            ServerInfo lo = servermanager.getProxy().constructServerInfo(lobby.getServerName(), new InetSocketAddress(lobby.getIpAddress(), lobby.getPort()), "Lobby:" + lobby.getServerName(), !lobby.getAccessType().equalsIgnoreCase("all"));
+        }
+        return lobbies;
+    }
+
+    public HashMap<String, ServerObject> initAllNonLobbies() {
+        HashMap<String, ServerObject> nonLobbies = servermanager.getMySQLHandler().loadAllActiveNonLobbies();
+        for (ServerObject lobby : nonLobbies.values()) {
+            ServerInfo lo = servermanager.getProxy().constructServerInfo(lobby.getServerName(), new InetSocketAddress(lobby.getIpAddress(), lobby.getPort()), "Server(NonLobby):" + lobby.getServerName(), !lobby.getAccessType().equalsIgnoreCase("all"));
+        }
+        return nonLobbies;
+    }
+
     public boolean serverIsLobby(String servername) {
         return servermanager.getLobbyMap().containsKey(servername);
     }
@@ -76,6 +94,18 @@ public class ServerHandler {
 
     public boolean serverIsOrchestrated(String servername) {
         return servermanager.getNoLobbiesMap().containsKey(servername) || servermanager.getLobbyMap().containsKey(servername);
+    }
+
+    public ServerObject getServerInformation(String servername) {
+        ServerObject serverObject = null;
+        if (serverAlreadyRegistered(servername)) {
+            if (serverIsLobby(servername)) {
+                serverObject = servermanager.getLobbyMap().get(servername);
+            } else {
+                serverObject = servermanager.getNoLobbiesMap().get(servername);
+            }
+        }
+        return serverObject;
     }
 
     public void deleteServer(ProxiedPlayer proxiedPlayer, String servername) {
@@ -158,6 +188,24 @@ public class ServerHandler {
                 return false;
             }
         }
+    }
+
+    public void sendPlayerToServer(ProxiedPlayer proxiedPlayer, String serverName) {
+        if (proxiedPlayer != null && serverAlreadyRegistered(serverName)) {
+            ServerObject serverObject = getServerInformation(serverName);
+            if (serverObject != null) {
+                if (proxiedPlayer.hasPermission("server.access." + serverObject.getAccessType()) || proxiedPlayer.hasPermission("server.join." + serverObject.getServerName()) ||
+                        proxiedPlayer.hasPermission("serverm.admin") || proxiedPlayer.hasPermission("serverm.joinall")) {
+                    proxiedPlayer.connect(servermanager.getProxy().getServerInfo(serverName));
+                } else {
+                    proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cYou don't have the permission to access the server."));
+                }
+            } else {
+                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThe server you've requested to be sent to can't be joined. Server information not available."));
+            }
+
+        }
+
     }
 
 

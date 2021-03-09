@@ -126,7 +126,7 @@ public class MySQLHandler {
         return smret;
     }
 
-    public HashMap<String, ServerObject> loadAllNonActiveLobbies() {
+    public HashMap<String, ServerObject> loadAllActiveNonLobbies() {
         HashMap<String, ServerObject> smret = new HashMap<>();
         try {
             ResultSet rs = statement.executeQuery("SELECT * FROM server_manager WHERE server_active = true"); // get all entries from the server_manager table

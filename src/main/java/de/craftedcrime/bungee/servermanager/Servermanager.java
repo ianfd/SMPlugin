@@ -55,7 +55,7 @@ public final class Servermanager extends Plugin {
         this.mySQLHandler = new MySQLHandler(db_name, db_url, db_username, db_password, this);
         // TODO: load servers implementation
 
-
+        loadServers();
         // register all commands below here
         getProxy().getPluginManager().registerCommand(this, new ServerCommand(this));
     }
@@ -124,7 +124,8 @@ public final class Servermanager extends Plugin {
     }
 
     private void loadServers() {
-
+        this.lobbyMap = serverHandler.initAllLobbies();
+        this.noLobbiesMap = serverHandler.initAllNonLobbies();
     }
 
     public HashMap<String, ServerObject> getLobbyMap() {
