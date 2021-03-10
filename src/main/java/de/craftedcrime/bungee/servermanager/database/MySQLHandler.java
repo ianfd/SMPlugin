@@ -277,5 +277,24 @@ public class MySQLHandler {
         return false;
     }
 
+    public boolean isLobby(String servername) {
+        boolean ret = false;
+
+        try {
+            ResultSet rs = statement.executeQuery("SELECT  * FROM server_manager_lobby WHERE lobby_name = '" + servername + "'");
+            ret = rs.next();
+            rs.close();
+            if (!ret) {
+                ResultSet rs2 = statement.executeQuery("SELECT * FROM server_manager WHERE server_name = '" + servername + "'");
+                ret = rs2.next();
+                rs2.close();
+            }
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return ret;
+    }
+
+
 
 }

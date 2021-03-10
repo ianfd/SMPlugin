@@ -10,7 +10,6 @@ import de.craftedcrime.bungee.servermanager.models.ServerObject;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.connection.Server;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -63,10 +62,25 @@ public class ServerHandler {
             if (servermanager.getMySQLHandler().serverExists(servername)) {
                 proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThis server can't be deactivated because it's already inactive."));
             } else {
-                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThis server can't be deactivated because it's not orchestrated."));
+                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThis server can't be deactivated because it's not managed by this plugin."));
             }
         }
     }
+
+    public void activateServer(ProxiedPlayer proxiedPlayer, String servername) {
+        // check if the server exists but isn't orchestrated
+        if (servermanager.getMySQLHandler().serverExists(servername)) {
+            if (!serverIsOrchestrated(servername) && !serverAlreadyRegistered(servername)) {
+                servermanager.getMySQLHandler().activateServer(servername, servermanager.getMySQLHandler().isLobby(servername));
+            } else {
+                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThis server can't be activated, because it's already active."));
+            }
+        } else {
+            proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThis server can't be deactivated because it's not orchestrated."));
+        }
+
+    }
+
 
     public HashMap<String, ServerObject> initAllLobbies() {
         HashMap<String, ServerObject> lobbies = servermanager.getMySQLHandler().loadAllActiveLobbies();
@@ -88,10 +102,12 @@ public class ServerHandler {
         return servermanager.getLobbyMap().containsKey(servername);
     }
 
+
     public boolean serverAlreadyRegistered(String servername) {
         return servermanager.getProxy().getServers().containsKey(servername);
     }
 
+    // checks if the server is currently orchestrated (active)
     public boolean serverIsOrchestrated(String servername) {
         return servermanager.getNoLobbiesMap().containsKey(servername) || servermanager.getLobbyMap().containsKey(servername);
     }

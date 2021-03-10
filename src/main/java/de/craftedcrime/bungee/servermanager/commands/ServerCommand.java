@@ -23,7 +23,6 @@ public class ServerCommand extends Command {
         this.servermanager = servermanager;
     }
 
-
     @Override
     public void execute(CommandSender sender, String[] args) {
 
@@ -43,7 +42,7 @@ public class ServerCommand extends Command {
                         servermanager.getServerHandler().deactivateServer(proxiedPlayer, args[1]);
                         break;
                     case "activate":
-                        // TODO: activate server method implementation
+                        servermanager.getServerHandler().activateServer(proxiedPlayer, args[1]);
                         break;
                     case "delete":
                         servermanager.getServerHandler().deleteServer(proxiedPlayer, args[1]);
@@ -75,7 +74,16 @@ public class ServerCommand extends Command {
     }
 
     private void displayHelp(ProxiedPlayer proxiedPlayer) {
-
+        proxiedPlayer.sendMessage(new TextComponent("§8-=-=-=-=- §7| §a§lServerManager §r§7| §8-=-=-=-=-"));
+        proxiedPlayer.sendMessage(new TextComponent("§8- §d/sm create §7<§bservername§7> §7<§bIP-Address§7> §7<§bPort§7> §7<§bAccess Level§7> §7<§blobby true/false§7>"));
+        proxiedPlayer.sendMessage(new TextComponent("§a§b§a§b§8-> §6Creates a new server in the bungeecord management context"));
+        proxiedPlayer.sendMessage(new TextComponent("§8- §d/sm activate §7<§bservername§7>"));
+        proxiedPlayer.sendMessage(new TextComponent("§a§b§a§b§8-> §6Activates a deactivated server, that is already registered."));
+        proxiedPlayer.sendMessage(new TextComponent("§8- §d/sm deactivate §7<§bservername§7>"));
+        proxiedPlayer.sendMessage(new TextComponent("§a§b§a§b§8-> §6Deactivates an activated server, that is already registered."));
+        proxiedPlayer.sendMessage(new TextComponent("§8- §d/sm delete §7<§bservername§7>"));
+        proxiedPlayer.sendMessage(new TextComponent("§a§b§a§b§8-> §6Deletes a registered server from context."));
+        proxiedPlayer.sendMessage(new TextComponent("§8-=-=-=-=- §7| §a§lServerManager §r§7| §8-=-=-=-=-"));
     }
 
     private void displayAllServerInfo(ProxiedPlayer proxiedPlayer) {
