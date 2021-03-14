@@ -7,12 +7,16 @@ package de.craftedcrime.bungee.servermanager.handler;
 
 import de.craftedcrime.bungee.servermanager.Servermanager;
 import de.craftedcrime.bungee.servermanager.models.ServerObject;
+import net.md_5.bungee.api.Callback;
+import net.md_5.bungee.api.ServerPing;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public class ServerHandler {
@@ -38,6 +42,11 @@ public class ServerHandler {
         ServerInfo serverInfo = servermanager.getProxy().constructServerInfo(serverObject.getServerName(), new InetSocketAddress(serverObject.getIpAddress(), serverObject.getPort()), "Just another server", restricted);
         servermanager.getProxy().getServers().put(serverObject.getServerName(), serverInfo);
         servermanager.getMySQLHandler().addServer(serverObject, lobby);
+        if (lobby) {
+            servermanager.getLobbyMap().put(serverObject.getServerName(), serverObject);
+        } else {
+            servermanager.getNoLobbiesMap().put(serverObject.getServerName(), serverObject);
+        }
         proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've added the server §7'" + serverObject.getServerName() + "§7' §a with the address §7' §b" + serverObject.getIpAddress() + ":" + serverObject.getPort() + " §7' to the context!"));
         proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aSee more information via: §6/sm info §c" + serverObject.getServerName()));
     }
@@ -71,7 +80,12 @@ public class ServerHandler {
         // check if the server exists but isn't orchestrated
         if (servermanager.getMySQLHandler().serverExists(servername)) {
             if (!serverIsOrchestrated(servername) && !serverAlreadyRegistered(servername)) {
-                servermanager.getMySQLHandler().activateServer(servername, servermanager.getMySQLHandler().isLobby(servername));
+                if (servermanager.getMySQLHandler().activateServer(servername, servermanager.getMySQLHandler().isLobby(servername))) {
+                    proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've successfully activated the server §7'§e" + servername + "§7'§a."));
+                } else {
+                    proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cAn error occurred, while you tried to activate the server. §eIs the server already active? Is the database connection okay?" +
+                            " Maybe a reboot helps."));
+                }
             } else {
                 proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThis server can't be activated, because it's already active."));
             }
@@ -86,6 +100,7 @@ public class ServerHandler {
         HashMap<String, ServerObject> lobbies = servermanager.getMySQLHandler().loadAllActiveLobbies();
         for (ServerObject lobby : lobbies.values()) {
             ServerInfo lo = servermanager.getProxy().constructServerInfo(lobby.getServerName(), new InetSocketAddress(lobby.getIpAddress(), lobby.getPort()), "Lobby:" + lobby.getServerName(), !lobby.getAccessType().equalsIgnoreCase("all"));
+            servermanager.getProxy().getServers().put(lobby.getServerName(), lo);
         }
         return lobbies;
     }
@@ -94,6 +109,7 @@ public class ServerHandler {
         HashMap<String, ServerObject> nonLobbies = servermanager.getMySQLHandler().loadAllActiveNonLobbies();
         for (ServerObject lobby : nonLobbies.values()) {
             ServerInfo lo = servermanager.getProxy().constructServerInfo(lobby.getServerName(), new InetSocketAddress(lobby.getIpAddress(), lobby.getPort()), "Server(NonLobby):" + lobby.getServerName(), !lobby.getAccessType().equalsIgnoreCase("all"));
+            servermanager.getProxy().getServers().put(lobby.getServerName(), lo);
         }
         return nonLobbies;
     }
@@ -174,19 +190,38 @@ public class ServerHandler {
     }
 
     public boolean sendToFallbackServer(String fromServername) {
+        // TODO: check if server is full
+        int serverSize = servermanager.getProxy().getServerInfo(fromServername).getPlayers().size();
         String fallBackServerName = null;
         if (servermanager.getLobbyMap().isEmpty()) {
             for (ServerObject so : servermanager.getNoLobbiesMap().values()) {
                 if (!so.getServerName().equalsIgnoreCase(fromServername) && so.getAccessType().equalsIgnoreCase("all")) {
-                    fallBackServerName = so.getServerName();
-                    break;
+                    AtomicInteger playerCount = new AtomicInteger();
+                    AtomicInteger maxPlayerCount = new AtomicInteger();
+                    servermanager.getProxy().getServerInfo(so.getServerName()).ping((result, error) -> {
+                        playerCount.set(result.getPlayers().getOnline());
+                        maxPlayerCount.set(result.getPlayers().getMax());
+                    });
+                    if (maxPlayerCount.get() > playerCount.get()) {
+                        fallBackServerName = so.getServerName();
+                        break;
+                    }
                 }
             }
-        } else {
+        }
+        if (fallBackServerName == null) {
             for (ServerObject so : servermanager.getLobbyMap().values()) {
                 if (!so.getServerName().equalsIgnoreCase(fromServername) && so.getAccessType().equalsIgnoreCase("all")) {
-                    fallBackServerName = so.getServerName();
-                    break;
+                    AtomicInteger playerCount = new AtomicInteger();
+                    AtomicInteger maxPlayerCount = new AtomicInteger();
+                    servermanager.getProxy().getServerInfo(so.getServerName()).ping((result, error) -> {
+                        playerCount.set(result.getPlayers().getOnline());
+                        maxPlayerCount.set(result.getPlayers().getMax());
+                    });
+                    if (maxPlayerCount.get() > playerCount.get()) {
+                        fallBackServerName = so.getServerName();
+                        break;
+                    }
                 }
             }
         }
@@ -196,8 +231,14 @@ public class ServerHandler {
             ServerInfo targetServer = servermanager.getProxy().getServers().getOrDefault(fallBackServerName, null);
             if (targetServer != null) {
                 for (ProxiedPlayer pp : servermanager.getProxy().getServerInfo(fromServername).getPlayers()) {
-                    pp.connect(targetServer);
-                    pp.sendMessage(new TextComponent("§8| §aServerManager §8| §eYou've been sent to the default fallback server, because the server you've been connected to has been deleted."));
+                    targetServer.ping((result, error) -> {
+                        if (result.getPlayers().getMax() > result.getPlayers().getOnline()) {
+                            pp.connect(targetServer);
+                            pp.sendMessage(new TextComponent("§8| §aServerManager §8| §eYou've been sent to the default fallback server, because the server you've been connected to has been deleted."));
+                        } else {
+                            pp.disconnect(new TextComponent("§8| §aServerManager §8| §cThe fallback-server was full. Please try again!"));
+                        }
+                    });
                 }
                 return true;
             } else {
@@ -210,18 +251,62 @@ public class ServerHandler {
         if (proxiedPlayer != null && serverAlreadyRegistered(serverName)) {
             ServerObject serverObject = getServerInformation(serverName);
             if (serverObject != null) {
-                if (proxiedPlayer.hasPermission("server.access." + serverObject.getAccessType()) || proxiedPlayer.hasPermission("server.join." + serverObject.getServerName()) ||
-                        proxiedPlayer.hasPermission("serverm.admin") || proxiedPlayer.hasPermission("serverm.joinall")) {
-                    proxiedPlayer.connect(servermanager.getProxy().getServerInfo(serverName));
+                if (isAbleToJoin(proxiedPlayer, serverObject)) {
+                    // TODO: check if server is full and display appropriate message
+                    ServerInfo targetServer = servermanager.getProxy().getServerInfo(serverName);
+                    System.out.println("target server " + (targetServer != null));
+                    System.out.println(targetServer);
+                    if (targetServer != null) {
+                        targetServer.ping(new Callback<ServerPing>() {
+                            @Override
+                            public void done(ServerPing result, Throwable error) {
+                                //if (error != null) {
+                                if (result != null && error == null) {
+                                    if (result.getPlayers().getMax() > result.getPlayers().getOnline()) {
+                                        proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou're moved to §7'§e" + serverName + "§7'§a."));
+                                        proxiedPlayer.connect(servermanager.getProxy().getServerInfo(serverName));
+                                    } else {
+                                        proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cSorry, but the server you're trying to connect to is full. :/"));
+                                    }
+                                } else {
+                                    System.out.println("result is null");
+                                }
+                            }
+                        });
+                    } else {
+                        System.out.println("moved alone");
+                        proxiedPlayer.connect(servermanager.getProxy().getServerInfo(serverName));
+                    }
+
                 } else {
                     proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cYou don't have the permission to access the server."));
                 }
             } else {
                 proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThe server you've requested to be sent to can't be joined. Server information not available."));
             }
-
         }
+    }
 
+    public boolean isAbleToJoin(ProxiedPlayer proxiedPlayer, ServerObject serverObject) {
+        return proxiedPlayer.hasPermission("server.access." + serverObject.getAccessType()) || proxiedPlayer.hasPermission("server.join." + serverObject.getServerName()) ||
+                proxiedPlayer.hasPermission("serverm.admin") || proxiedPlayer.hasPermission("serverm.joinall") || serverObject.getAccessType().equalsIgnoreCase("all");
+    }
+
+    public boolean sendToHub(ProxiedPlayer proxiedPlayer) {
+        AtomicBoolean ready = new AtomicBoolean();
+        ready.set(false);
+        for (ServerObject so : servermanager.getLobbyMap().values()) {
+            if (isAbleToJoin(proxiedPlayer, so)) {
+                servermanager.getProxy().getServerInfo(so.getServerName()).ping((result, error) -> {
+                    if (result.getPlayers().getMax() >= (result.getPlayers().getOnline()+1)) {
+                        proxiedPlayer.connect(servermanager.getProxy().getServerInfo(so.getServerName()));
+                        proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've been moved to the hub §7'§e" + so.getServerName() + "§7'§a."));
+                    }
+                });
+                if (ready.get()) break;
+            }
+        }
+        return ready.get();
     }
 
 

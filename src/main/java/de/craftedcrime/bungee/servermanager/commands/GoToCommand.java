@@ -25,7 +25,7 @@ public class GoToCommand extends Command {
         if (sender instanceof ProxiedPlayer) {
             ProxiedPlayer proxiedPlayer = (ProxiedPlayer) sender;
             if (args.length == 1) {
-                servermanager.getServerHandler().sendPlayerToServer(proxiedPlayer, args[1]);
+                servermanager.getServerHandler().sendPlayerToServer(proxiedPlayer, args[0]);
             } else {
                 displayHelp(proxiedPlayer);
             }

@@ -42,7 +42,6 @@ public class MySQLHandler {
 
     // establish connection to the database server
     private Connection connectToDatabase(String db_name, String db_url, String db_username, String db_password) {
-        servermanager.getLogger().log(Level.INFO, "MySQL settings: " + db_url + "," + db_name + "," + db_username + "," + db_password);
         try {
             return DriverManager.getConnection("jdbc:mysql://" + db_url + "/" + db_name + "?user=" + db_username + "&password=" + db_password);
         } catch (SQLException throwables) {
@@ -86,7 +85,7 @@ public class MySQLHandler {
     public HashMap<String, ServerObject> loadAllActiveLobbies() {
         HashMap<String, ServerObject> smret = new HashMap<>();
         try {
-            ResultSet rs = statement.executeQuery("SELECT * FROM server_manager_lobby WHERE lobby_active = true"); // get all entries from the server_manager_lobbies table
+            ResultSet rs = statement.executeQuery("SELECT * FROM server_manager_lobby WHERE lobby_active=true"); // get all entries from the server_manager_lobbies table
             while (rs.next()) {
                 ServerObject serverObject = new ServerObject();
                 serverObject.setServer_id(rs.getInt("lobby_id"));
@@ -129,7 +128,7 @@ public class MySQLHandler {
     public HashMap<String, ServerObject> loadAllActiveNonLobbies() {
         HashMap<String, ServerObject> smret = new HashMap<>();
         try {
-            ResultSet rs = statement.executeQuery("SELECT * FROM server_manager WHERE server_active = true"); // get all entries from the server_manager table
+            ResultSet rs = statement.executeQuery("SELECT * FROM server_manager WHERE server_active=true"); // get all entries from the server_manager table
             while (rs.next()) {
                 ServerObject serverObject = new ServerObject();
                 serverObject.setServer_id(rs.getInt("server_id"));
@@ -172,10 +171,10 @@ public class MySQLHandler {
     public boolean serverExists(String servername) {
         boolean pre = false;
         try {
-            ResultSet rs = statement.executeQuery("SELECT * FROM server_manager WHERE server_name = '" + servername + "'");
+            ResultSet rs = statement.executeQuery("SELECT * FROM server_manager WHERE server_name='" + servername+"'");
             pre = rs.next();
             rs.close();
-            ResultSet rsl = statement.executeQuery("SELECT * FROM server_manager_lobby WHERE lobby_name = '" + servername + "'");
+            ResultSet rsl = statement.executeQuery("SELECT * FROM server_manager_lobby WHERE lobby_name='" + servername+"'");
             pre = pre || rsl.next();
             rs.close();
         } catch (SQLException throwables) {
@@ -214,9 +213,9 @@ public class MySQLHandler {
             try {
                 PreparedStatement preparedStatement;
                 if (!lobby) {
-                    preparedStatement = connection.prepareStatement("DELETE FROM server_manager WHERE server_name = ?");
+                    preparedStatement = connection.prepareStatement("DELETE FROM server_manager WHERE server_name = ?;");
                 } else {
-                    preparedStatement = connection.prepareStatement("DELETE FROM server_manager_lobby WHERE lobby_name = ?");
+                    preparedStatement = connection.prepareStatement("DELETE FROM server_manager_lobby WHERE lobby_name = ?;");
                 }
                 preparedStatement.setString(1, servername);
                 preparedStatement.execute();
@@ -270,7 +269,7 @@ public class MySQLHandler {
                 return true;
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
-                servermanager.getLogger().log(Level.WARNING, "Failed to deactivate the server '" + servername + "'. Please check you database config.");
+                servermanager.getLogger().log(Level.WARNING, "Failed to activate the server '" + servername + "'. Please check you database config.");
                 return false;
             }
         }
@@ -281,11 +280,11 @@ public class MySQLHandler {
         boolean ret = false;
 
         try {
-            ResultSet rs = statement.executeQuery("SELECT  * FROM server_manager_lobby WHERE lobby_name = '" + servername + "'");
+            ResultSet rs = statement.executeQuery("SELECT  * FROM server_manager_lobby WHERE lobby_name='" + servername + "'");
             ret = rs.next();
             rs.close();
             if (!ret) {
-                ResultSet rs2 = statement.executeQuery("SELECT * FROM server_manager WHERE server_name = '" + servername + "'");
+                ResultSet rs2 = statement.executeQuery("SELECT * FROM server_manager WHERE server_name='" + servername + "'");
                 ret = rs2.next();
                 rs2.close();
             }
@@ -294,7 +293,6 @@ public class MySQLHandler {
         }
         return ret;
     }
-
 
 
 }

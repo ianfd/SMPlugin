@@ -26,6 +26,10 @@ server:
       database:
       # If you protect your redis db, type the password here.
       password:
+    # Disables all 'default' commands of bungeecord. This includes: /server , /send , /glist
+  disable_default_bungeecord_commands: true
+  # Enable the possibility to edit your ServerManager configuration via the web editor. Help available under: https://webeditor.sm.craftedcrime.de/help
+  enable_web_editor: false
 stats:
   # Stats are used to determine how many players and servers are using this plugin. (TBD)
   # These stats are visible for everyone!

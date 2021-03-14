@@ -12,6 +12,9 @@ Orchestration stuff haha added in the future !!
 
 TBD NOW: load servers at startup and add to context !!!!!
 
+Joins, force hub
+Joins, what to do when a server is not available
+
 
 # Documentation
 

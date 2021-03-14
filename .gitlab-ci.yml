@@ -1,23 +1,13 @@
 image: maven:3.6.3-jdk-11
 stages:
-  - clean
-  - compile
-  - package
+  - build
 
-clean:
-  stage: clean
+build:
+  stage: build
   script:
-    - "mvn clean"
-
-compile:
-  stage: compile
-  script:
-    - "mvn compile"
-
-package:
-  stage: package
-  script:
-    - "mvn package"
+    - "mvn clean compile package"
   artifacts:
+    name: "serverManager"
     paths:
       - target/*.jar
+

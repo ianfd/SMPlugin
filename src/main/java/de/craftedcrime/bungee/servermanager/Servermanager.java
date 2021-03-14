@@ -1,6 +1,8 @@
 package de.craftedcrime.bungee.servermanager;
 
+import de.craftedcrime.bungee.servermanager.commands.GoToCommand;
 import de.craftedcrime.bungee.servermanager.commands.ServerCommand;
+import de.craftedcrime.bungee.servermanager.commands.ServerManagerCommand;
 import de.craftedcrime.bungee.servermanager.database.MySQLHandler;
 import de.craftedcrime.bungee.servermanager.handler.ServerHandler;
 import de.craftedcrime.bungee.servermanager.models.ServerObject;
@@ -34,6 +36,10 @@ public final class Servermanager extends Plugin {
     private String db_username = "";
     private String db_password = "";
 
+    // ------ GENERAL ------ //
+    private boolean disableDefaultBungeeCommands = false;
+    private boolean forceHub = false;
+
     // -------------- HANDLERS -------------- //
     // ------ MySQL Handler ------ //
     private MySQLHandler mySQLHandler;
@@ -55,14 +61,26 @@ public final class Servermanager extends Plugin {
         this.mySQLHandler = new MySQLHandler(db_name, db_url, db_username, db_password, this);
         // TODO: load servers implementation
 
+
         loadServers();
         // register all commands below here
+        getProxy().getPluginManager().registerCommand(this, new ServerManagerCommand(this));
         getProxy().getPluginManager().registerCommand(this, new ServerCommand(this));
+        getProxy().getPluginManager().registerCommand(this, new GoToCommand(this));
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+    }
+
+    private void disableDefaultCommands() {
+        if (this.disableDefaultBungeeCommands) {
+            getLogger().log(Level.INFO, "Disabling the default bungee commands. The commands /server, /glist, /send are disabled.");
+        } else {
+            getLogger().log(Level.INFO, "Attention! The default bungeecord commands are still enabled! If you don't configure the permissions otherwise, this could be a security risk. " +
+                    "Keep that in mind! Following commands should be deactivated: ()");
+        }
     }
 
     private void loadConfig() {
@@ -112,6 +130,15 @@ public final class Servermanager extends Plugin {
                 this.db_password = "";
             }
 
+            // ---------- Load Disable default bungee commands ----------
+            if (configuration.get("server.disable_default_bungeecord_commands") != null) {
+                this.disableDefaultBungeeCommands = configuration.getBoolean("server.disable_default_bungeecord_commands");
+            } else {
+                getLogger().log(Level.FINER, "The server.disable_default_bungeecord_commands option wasn't found in the config. It's was set to the default value (enabled). The default bungee " +
+                        "commands are disabled, use those provided by the ServerManager-plugin.");
+                this.disableDefaultBungeeCommands = true;
+            }
+
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -120,7 +147,13 @@ public final class Servermanager extends Plugin {
 
 
         // loading the configuration
+        System.out.println("LOADED PLUGINS!!! START");
+        getProxy().getPluginManager().getPlugins().forEach(plugin -> System.out.println("NAME OF PLUGIN" + plugin.getFile().getName()));
+        System.out.println("LOADED PLUGINS!!! END");
+    }
 
+    private void disableDefaultCommads() {
+        //getProxy().getPluginManager().pl
     }
 
     private void loadServers() {
@@ -146,5 +179,9 @@ public final class Servermanager extends Plugin {
 
     public GeneralUtils getGeneralUtils() {
         return generalUtils;
+    }
+
+    public boolean isForceHub() {
+        return forceHub;
     }
 }
