@@ -46,8 +46,8 @@ public class MySQLHandler {
             return DriverManager.getConnection("jdbc:mysql://" + db_url + "/" + db_name + "?user=" + db_username + "&password=" + db_password);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
-            servermanager.getLogger().log(Level.WARNING, "Failed to connect to the database.");
-            servermanager.getProxy().stop("A non valid database connection has been entered. Please revisit you settings.");
+            servermanager.getLogger().log(Level.WARNING, "[Connect To Database] Failed to connect to the database.");
+            servermanager.getProxy().stop("[Connect To Database] A non valid database connection has been entered. Please revisit you settings.");
         }
         return null;
     }
@@ -57,7 +57,7 @@ public class MySQLHandler {
             this.statement = connection.createStatement();
         } catch (SQLException throwables) {
             throwables.printStackTrace();
-            servermanager.getLogger().log(Level.WARNING, "Failed to create statement! (please check your db-config)");
+            servermanager.getLogger().log(Level.WARNING, "[Load Statement] Failed to create statement! (please check your db-config)");
         }
     }
 
@@ -71,14 +71,14 @@ public class MySQLHandler {
         try {
 
             connection.prepareCall("create table if not exists server_manager(server_id int auto_increment primary key, server_name varchar(64) not null, server_ip varchar(64) not null, " +
-                    "server_port int not null, server_access_type varchar(64) default 'ALL' not null, server_active boolean default true not null);").execute();
+                    "server_port int not null, server_access_type varchar(64) default 'all' not null, server_active boolean default true not null, server_max_players int default 20 not null);").execute();
 
             connection.prepareCall("create table if not exists server_manager_lobby ( lobby_id int auto_increment primary key, lobby_name varchar(64) not null, lobby_ip varchar(64) not null, " +
-                    "lobby_port int not null, lobby_access_type varchar(64) default 'ALL' not null, lobby_active boolean default true not null);").execute();
+                    "lobby_port int not null, lobby_access_type varchar(64) default 'all' not null, lobby_active boolean default true not null, lobby_max_players int default 20 not null);").execute();
 
         } catch (SQLException throwables) {
             throwables.printStackTrace();
-            servermanager.getLogger().log(Level.WARNING, "Failed to execute the init statement, to create the necessary tables. Please check your database configuration!");
+            servermanager.getLogger().log(Level.WARNING, "[Init Database] Failed to execute the init statement, to create the necessary tables. Please check your database configuration!");
         }
     }
 
@@ -93,13 +93,15 @@ public class MySQLHandler {
                 serverObject.setIpAddress(rs.getString("lobby_ip"));
                 serverObject.setPort(rs.getInt("lobby_port"));
                 serverObject.setAccessType(rs.getString("lobby_access_type"));
+                serverObject.setMaxPlayers(rs.getInt("lobby_max_players"));
                 smret.put(serverObject.getServerName(), serverObject);
             }
             rs.close();
         } catch (SQLException throwables) {
             throwables.printStackTrace();
-            servermanager.getLogger().log(Level.WARNING, "Failed to load all lobby servers. Please check your database config.");
+            servermanager.getLogger().log(Level.WARNING, "[Load All Active Lobbies] Failed to load all lobby servers. Please check your database config.");
         }
+        servermanager.getLogger().log(Level.INFO, "[Load All Active Lobbies] Loading all active lobbies from the database. " + smret.values().size() + " entries!");
         return smret;
     }
 
@@ -115,12 +117,13 @@ public class MySQLHandler {
                 serverObject.setPort(rs.getInt("lobby_port"));
                 serverObject.setAccessType(rs.getString("lobby_access_type"));
                 serverObject.setActive(rs.getBoolean("lobby_active"));
+                serverObject.setMaxPlayers(rs.getInt("lobby_max_players"));
                 smret.put(serverObject.getServerName(), serverObject);
             }
             rs.close();
         } catch (SQLException throwables) {
             throwables.printStackTrace();
-            servermanager.getLogger().log(Level.WARNING, "Failed to load all lobby servers. Please check your database config.");
+            servermanager.getLogger().log(Level.WARNING, "[Load All Lobbies] Failed to load all lobby servers. Please check your database config.");
         }
         return smret;
     }
@@ -136,13 +139,15 @@ public class MySQLHandler {
                 serverObject.setIpAddress(rs.getString("server_ip"));
                 serverObject.setPort(rs.getInt("server_port"));
                 serverObject.setAccessType(rs.getString("server_access_type"));
+                serverObject.setMaxPlayers(rs.getInt("server_max_players"));
                 smret.put(serverObject.getServerName(), serverObject);
             }
             rs.close();
         } catch (SQLException throwables) {
             throwables.printStackTrace();
-            servermanager.getLogger().log(Level.WARNING, "Failed to load all non lobby servers. Please check your database config.");
+            servermanager.getLogger().log(Level.WARNING, "[Load Active Non Lobbies] Failed to load all non lobby servers. Please check your database config.");
         }
+        servermanager.getLogger().log(Level.INFO, "[Load Active Non Lobbies] Loading all active non-lobbies from the database. " + smret.values().size() + " entries!");
         return smret;
     }
 
@@ -158,12 +163,13 @@ public class MySQLHandler {
                 serverObject.setPort(rs.getInt("server_port"));
                 serverObject.setAccessType(rs.getString("server_access_type"));
                 serverObject.setActive(rs.getBoolean("server_active"));
+                serverObject.setMaxPlayers(rs.getInt("server_max_players"));
                 smret.put(serverObject.getServerName(), serverObject);
             }
             rs.close();
         } catch (SQLException throwables) {
             throwables.printStackTrace();
-            servermanager.getLogger().log(Level.WARNING, "Failed to load all non lobby servers. Please check your database config.");
+            servermanager.getLogger().log(Level.WARNING, "[Load All Non Lobbies] Failed to load all non lobby servers. Please check your database config.");
         }
         return smret;
     }
@@ -179,9 +185,45 @@ public class MySQLHandler {
             rs.close();
         } catch (SQLException throwables) {
             throwables.printStackTrace();
-            servermanager.getLogger().log(Level.WARNING, "Failed to check if a server exists. Check your database config.");
+            servermanager.getLogger().log(Level.WARNING, "[Server Exists] Failed to check if a server exists. Check your database config.");
         }
         return pre;
+    }
+
+    public ServerObject getServerObjectByName(String servername) {
+        ServerObject serverObject = null;
+        try {
+            ResultSet rs;
+            if (isLobby(servername)) {
+                rs = statement.executeQuery("SELECT * FROM server_manager_lobby WHERE lobby_name='" + servername + "'");
+                if (rs.next()) {
+                    serverObject = new ServerObject();
+                    serverObject.setServerName(rs.getString("lobby_name"));
+                    serverObject.setServer_id(rs.getInt("lobby_id"));
+                    serverObject.setActive(rs.getBoolean("lobby_active"));
+                    serverObject.setPort(rs.getInt("lobby_port"));
+                    serverObject.setIpAddress(rs.getString("lobby_ip"));
+                    serverObject.setAccessType(rs.getString("lobby_access_type"));
+                    serverObject.setMaxPlayers(rs.getInt("lobby_max_players"));
+                }
+            } else {
+                rs = statement.executeQuery("SELECT * FROM server_manager WHERE server_name='" + servername + "'");
+                if (rs.next()) {
+                    serverObject = new ServerObject();
+                    serverObject.setServerName(rs.getString("server_name"));
+                    serverObject.setServer_id(rs.getInt("server_id"));
+                    serverObject.setActive(rs.getBoolean("server_active"));
+                    serverObject.setPort(rs.getInt("server_port"));
+                    serverObject.setIpAddress(rs.getString("server_ip"));
+                    serverObject.setAccessType(rs.getString("server_access_type"));
+                    serverObject.setMaxPlayers(rs.getInt("server_max_players"));
+                }
+            }
+            rs.close();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return serverObject;
     }
 
     // adds a minecraft server to the context
@@ -199,10 +241,10 @@ public class MySQLHandler {
                 preparedStatement.setInt(3, serverObject.getPort());
                 preparedStatement.setString(4, serverObject.getAccessType());
                 preparedStatement.execute();
-                servermanager.getLogger().log(Level.INFO, "Successfully saved '" + serverObject.getServerName() + "' to the database.");
+                servermanager.getLogger().log(Level.INFO, "[Add Server] Successfully saved '" + serverObject.getServerName() + "' to the database.");
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
-                servermanager.getLogger().log(Level.WARNING, "Failed to save the new server '" + serverObject.getServerName() + "' into the database. Please check your db-config!");
+                servermanager.getLogger().log(Level.WARNING, "[Add Server] Failed to save the new server '" + serverObject.getServerName() + "' into the database. Please check your db-config!");
             }
         }
     }
@@ -219,13 +261,13 @@ public class MySQLHandler {
                 }
                 preparedStatement.setString(1, servername);
                 preparedStatement.execute();
-                servermanager.getLogger().log(Level.INFO, "Successfully deleted '" + servername + "' from the database.");
+                servermanager.getLogger().log(Level.INFO, "[Delete Server] Successfully deleted '" + servername + "' from the database.");
                 servermanager.getNoLobbiesMap().remove(servername);
-                servermanager.getLogger().log(Level.INFO, "Successfully deleted '" + servername + "' from internal context.");
+                servermanager.getLogger().log(Level.INFO, "[Delete Server] Successfully deleted '" + servername + "' from internal context.");
                 return true;
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
-                servermanager.getLogger().log(Level.WARNING, "Failed to delete the server '" + servername + "' from the database. Please check your db-config.");
+                servermanager.getLogger().log(Level.WARNING, "[Delete Server] Failed to delete the server '" + servername + "' from the database. Please check your db-config.");
                 return false;
             }
         }
@@ -247,7 +289,7 @@ public class MySQLHandler {
                 return true;
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
-                servermanager.getLogger().log(Level.WARNING, "Failed to deactivate the server '" + servername + "'. Please check you database config.");
+                servermanager.getLogger().log(Level.WARNING, "[Deactivate Server] Failed to deactivate the server '" + servername + "'. Please check you database config.");
                 return false;
             }
         }
@@ -269,7 +311,7 @@ public class MySQLHandler {
                 return true;
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
-                servermanager.getLogger().log(Level.WARNING, "Failed to activate the server '" + servername + "'. Please check you database config.");
+                servermanager.getLogger().log(Level.WARNING, "[Activate Server] Failed to activate the server '" + servername + "'. Please check you database config.");
                 return false;
             }
         }
@@ -283,13 +325,31 @@ public class MySQLHandler {
             ResultSet rs = statement.executeQuery("SELECT  * FROM server_manager_lobby WHERE lobby_name='" + servername + "'");
             ret = rs.next();
             rs.close();
-            if (!ret) {
-                ResultSet rs2 = statement.executeQuery("SELECT * FROM server_manager WHERE server_name='" + servername + "'");
-                ret = rs2.next();
-                rs2.close();
-            }
         } catch (SQLException throwables) {
             throwables.printStackTrace();
+        }
+        return ret;
+    }
+
+    public boolean changePlayerCount(String servername, int playerCount) {
+        boolean ret = false;
+        if (serverExists(servername)) {
+            PreparedStatement preparedStatement;
+                try {
+                    if (isLobby(servername)) {
+                        preparedStatement = connection.prepareStatement("UPDATE server_manager_lobby SET lobby_max_players=? WHERE lobby_name=?");
+                    } else {
+                        preparedStatement = connection.prepareStatement("UPDATE server_manager SET server_max_players=? WHERE server_name=?");
+                    }
+                    preparedStatement.setInt(1, playerCount);
+                    preparedStatement.setString(2, servername);
+                    preparedStatement.execute();
+                    ret = true;
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
+        } else {
+            servermanager.getLogger().log(Level.WARNING, "[Max-Player amount change] The server '" + servername + "' doesn't exist, please check for correct spelling of the server name!");
         }
         return ret;
     }

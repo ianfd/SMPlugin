@@ -7,16 +7,12 @@ package de.craftedcrime.bungee.servermanager.handler;
 
 import de.craftedcrime.bungee.servermanager.Servermanager;
 import de.craftedcrime.bungee.servermanager.models.ServerObject;
-import net.md_5.bungee.api.Callback;
-import net.md_5.bungee.api.ServerPing;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public class ServerHandler {
@@ -27,6 +23,13 @@ public class ServerHandler {
         this.servermanager = servermanager;
     }
 
+    /**
+     * add a new server to the management of ServerManager
+     *
+     * @param proxiedPlayer player who's adding a new server
+     * @param serverObject  object that contains all information to create a new managed server
+     * @param lobby         whether the new server is a lobby or not
+     */
     public void addServer(ProxiedPlayer proxiedPlayer, ServerObject serverObject, boolean lobby) {
         if (servermanager.getMySQLHandler().serverExists(serverObject.getServerName())) {
             if (serverAlreadyRegistered(serverObject.getServerName())) {
@@ -47,10 +50,18 @@ public class ServerHandler {
         } else {
             servermanager.getNoLobbiesMap().put(serverObject.getServerName(), serverObject);
         }
-        proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've added the server §7'" + serverObject.getServerName() + "§7' §a with the address §7' §b" + serverObject.getIpAddress() + ":" + serverObject.getPort() + " §7' to the context!"));
+        proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've added the server §7'§e" + serverObject.getServerName() + "§7' §a with the address §7'§e" + serverObject.getIpAddress() + ":" + serverObject.getPort() + "§7'§a to the context!"));
+        proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've added the server with the access level §7'§e" + serverObject.getAccessType() + "§7'§a."));
+        proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aThe max-player amount for this server has been set to §7'§e20§7'§a. \n§a      §aYou can change this via: §d/sm setmaxplayer §7<§bservername§7> §7<§bamount of players§7>"));
         proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aSee more information via: §6/sm info §c" + serverObject.getServerName()));
     }
 
+    /**
+     * deactivates a server that is managed in ServerManager
+     *
+     * @param proxiedPlayer player who's deactivating a server
+     * @param servername    server that's going to be deactivated
+     */
     public void deactivateServer(ProxiedPlayer proxiedPlayer, String servername) {
         if (serverAlreadyRegistered(servername) && serverIsOrchestrated(servername)) {
             if (sendToFallbackServer(servername)) {
@@ -76,6 +87,12 @@ public class ServerHandler {
         }
     }
 
+    /**
+     * activate a managed server
+     *
+     * @param proxiedPlayer who's trying to activate a server
+     * @param servername    server you want to activate
+     */
     public void activateServer(ProxiedPlayer proxiedPlayer, String servername) {
         // check if the server exists but isn't orchestrated
         if (servermanager.getMySQLHandler().serverExists(servername)) {
@@ -96,6 +113,11 @@ public class ServerHandler {
     }
 
 
+    /**
+     * loads all lobbies and registers them in BungeeCord
+     *
+     * @return returns all lobbies in a hashmap
+     */
     public HashMap<String, ServerObject> initAllLobbies() {
         HashMap<String, ServerObject> lobbies = servermanager.getMySQLHandler().loadAllActiveLobbies();
         for (ServerObject lobby : lobbies.values()) {
@@ -105,6 +127,11 @@ public class ServerHandler {
         return lobbies;
     }
 
+    /**
+     * loads all non lobbies and registers them in BungeeCord
+     *
+     * @return returns all non lobbies in a hashmap
+     */
     public HashMap<String, ServerObject> initAllNonLobbies() {
         HashMap<String, ServerObject> nonLobbies = servermanager.getMySQLHandler().loadAllActiveNonLobbies();
         for (ServerObject lobby : nonLobbies.values()) {
@@ -114,20 +141,42 @@ public class ServerHandler {
         return nonLobbies;
     }
 
+    /**
+     * checks if a server is a lobby or not
+     *
+     * @param servername name of the server you want to check
+     * @return whether the server is a lobby or not
+     */
     public boolean serverIsLobby(String servername) {
         return servermanager.getLobbyMap().containsKey(servername);
     }
 
-
+    /**
+     * check if a server is registered in Bungeecord
+     *
+     * @param servername name of the server you want to check
+     * @return whether the server is registered in BungeeCord or not
+     */
     public boolean serverAlreadyRegistered(String servername) {
         return servermanager.getProxy().getServers().containsKey(servername);
     }
 
-    // checks if the server is currently orchestrated (active)
+    /**
+     * checks if a server is orchestrated, means is registered in ServerManager
+     *
+     * @param servername name of the server you want to check
+     * @return whether the server is orchestrated by ServerManager or not
+     */
     public boolean serverIsOrchestrated(String servername) {
         return servermanager.getNoLobbiesMap().containsKey(servername) || servermanager.getLobbyMap().containsKey(servername);
     }
 
+    /**
+     * get the server info from the database
+     *
+     * @param servername name of the server
+     * @return null if not exists or an error occurred, otherwise returns database server info object
+     */
     public ServerObject getServerInformation(String servername) {
         ServerObject serverObject = null;
         if (serverAlreadyRegistered(servername)) {
@@ -140,6 +189,12 @@ public class ServerHandler {
         return serverObject;
     }
 
+    /**
+     * delete a managed server
+     *
+     * @param proxiedPlayer who's deleting the server
+     * @param servername    servername you want to delete
+     */
     public void deleteServer(ProxiedPlayer proxiedPlayer, String servername) {
         // general functionality of this method
         if (serverAlreadyRegistered(servername)) {
@@ -189,21 +244,20 @@ public class ServerHandler {
         }
     }
 
+    /**
+     * send all players from the server to a random fallback server, all players that don't fit onto that fallback are going to be kicked from the server
+     *
+     * @param fromServername name of the server you want all players to be sent to a fallback
+     * @return whether it worked or not (essentially if there is a fallback available or not)
+     */
     public boolean sendToFallbackServer(String fromServername) {
         // TODO: check if server is full
-        int serverSize = servermanager.getProxy().getServerInfo(fromServername).getPlayers().size();
-        String fallBackServerName = null;
+        ServerObject fallBackServerName = null;
         if (servermanager.getLobbyMap().isEmpty()) {
             for (ServerObject so : servermanager.getNoLobbiesMap().values()) {
                 if (!so.getServerName().equalsIgnoreCase(fromServername) && so.getAccessType().equalsIgnoreCase("all")) {
-                    AtomicInteger playerCount = new AtomicInteger();
-                    AtomicInteger maxPlayerCount = new AtomicInteger();
-                    servermanager.getProxy().getServerInfo(so.getServerName()).ping((result, error) -> {
-                        playerCount.set(result.getPlayers().getOnline());
-                        maxPlayerCount.set(result.getPlayers().getMax());
-                    });
-                    if (maxPlayerCount.get() > playerCount.get()) {
-                        fallBackServerName = so.getServerName();
+                    if (so.getMaxPlayers() > servermanager.getProxy().getServerInfo(so.getServerName()).getPlayers().size()) {
+                        fallBackServerName = so;
                         break;
                     }
                 }
@@ -212,14 +266,8 @@ public class ServerHandler {
         if (fallBackServerName == null) {
             for (ServerObject so : servermanager.getLobbyMap().values()) {
                 if (!so.getServerName().equalsIgnoreCase(fromServername) && so.getAccessType().equalsIgnoreCase("all")) {
-                    AtomicInteger playerCount = new AtomicInteger();
-                    AtomicInteger maxPlayerCount = new AtomicInteger();
-                    servermanager.getProxy().getServerInfo(so.getServerName()).ping((result, error) -> {
-                        playerCount.set(result.getPlayers().getOnline());
-                        maxPlayerCount.set(result.getPlayers().getMax());
-                    });
-                    if (maxPlayerCount.get() > playerCount.get()) {
-                        fallBackServerName = so.getServerName();
+                    if (so.getMaxPlayers() > servermanager.getProxy().getServerInfo(so.getServerName()).getPlayers().size()) {
+                        fallBackServerName = so;
                         break;
                     }
                 }
@@ -228,17 +276,15 @@ public class ServerHandler {
         if (fallBackServerName == null) {
             return false;
         } else {
-            ServerInfo targetServer = servermanager.getProxy().getServers().getOrDefault(fallBackServerName, null);
+            ServerInfo targetServer = servermanager.getProxy().getServers().getOrDefault(fallBackServerName.getServerName(), null);
             if (targetServer != null) {
                 for (ProxiedPlayer pp : servermanager.getProxy().getServerInfo(fromServername).getPlayers()) {
-                    targetServer.ping((result, error) -> {
-                        if (result.getPlayers().getMax() > result.getPlayers().getOnline()) {
-                            pp.connect(targetServer);
-                            pp.sendMessage(new TextComponent("§8| §aServerManager §8| §eYou've been sent to the default fallback server, because the server you've been connected to has been deleted."));
-                        } else {
-                            pp.disconnect(new TextComponent("§8| §aServerManager §8| §cThe fallback-server was full. Please try again!"));
-                        }
-                    });
+                    if (fallBackServerName.getMaxPlayers() > targetServer.getPlayers().size()) {
+                        pp.connect(targetServer);
+                        pp.sendMessage(new TextComponent("§8| §aServerManager §8| §eYou've been sent to the default fallback server, because the server you've been connected to has been deleted."));
+                    } else {
+                        pp.disconnect(new TextComponent("§8| §aServerManager §8| §cThe fallback-server was full. Please try again!"));
+                    }
                 }
                 return true;
             } else {
@@ -247,66 +293,159 @@ public class ServerHandler {
         }
     }
 
+    /**
+     * sends a player to a server (doesn't have to be managed via ServerManager)
+     *
+     * @param proxiedPlayer who's going to be sent to a server
+     * @param serverName    name of the server the player wants to be sent to
+     */
     public void sendPlayerToServer(ProxiedPlayer proxiedPlayer, String serverName) {
-        if (proxiedPlayer != null && serverAlreadyRegistered(serverName)) {
-            ServerObject serverObject = getServerInformation(serverName);
-            if (serverObject != null) {
-                if (isAbleToJoin(proxiedPlayer, serverObject)) {
-                    // TODO: check if server is full and display appropriate message
-                    ServerInfo targetServer = servermanager.getProxy().getServerInfo(serverName);
-                    System.out.println("target server " + (targetServer != null));
-                    System.out.println(targetServer);
-                    if (targetServer != null) {
-                        targetServer.ping(new Callback<ServerPing>() {
-                            @Override
-                            public void done(ServerPing result, Throwable error) {
-                                //if (error != null) {
-                                if (result != null && error == null) {
-                                    if (result.getPlayers().getMax() > result.getPlayers().getOnline()) {
+        if (proxiedPlayer != null)
+            if (serverAlreadyRegistered(serverName)) {
+                if (serverIsOrchestrated(serverName)) {
+                    if (!proxiedPlayer.getServer().getInfo().getName().equalsIgnoreCase(serverName)) {
+                        ServerObject serverObject = getServerInformation(serverName);
+                        if (serverObject != null) {
+                            if (isAbleToJoin(proxiedPlayer, serverObject)) {
+                                ServerInfo targetServer = servermanager.getProxy().getServerInfo(serverName);
+                                if (targetServer != null) {
+                                    if (serverObject.getMaxPlayers() > targetServer.getPlayers().size()) {
                                         proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou're moved to §7'§e" + serverName + "§7'§a."));
                                         proxiedPlayer.connect(servermanager.getProxy().getServerInfo(serverName));
                                     } else {
                                         proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cSorry, but the server you're trying to connect to is full. :/"));
                                     }
                                 } else {
-                                    System.out.println("result is null");
+                                    proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cSorry, but we weren't able to find this server."));
                                 }
+                            } else {
+                                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cYou don't have the permission to access the server."));
                             }
-                        });
+                        } else {
+                            proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThe server you've requested to be sent to can't be joined. Server information not available."));
+                        }
                     } else {
-                        System.out.println("moved alone");
-                        proxiedPlayer.connect(servermanager.getProxy().getServerInfo(serverName));
+                        proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cYou're already connected to this server."));
                     }
-
-                } else {
-                    proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cYou don't have the permission to access the server."));
                 }
             } else {
-                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThe server you've requested to be sent to can't be joined. Server information not available."));
+                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cAttention! You are joining a server that in not managed by ServerManager!"));
+                proxiedPlayer.connect(servermanager.getProxy().getServerInfo(serverName));
             }
-        }
+
     }
 
+    /**
+     * @param proxiedPlayer who's going to be checked
+     * @param serverObject  server that sets the conditions
+     * @return whether the player is allowed to join or not
+     */
     public boolean isAbleToJoin(ProxiedPlayer proxiedPlayer, ServerObject serverObject) {
         return proxiedPlayer.hasPermission("server.access." + serverObject.getAccessType()) || proxiedPlayer.hasPermission("server.join." + serverObject.getServerName()) ||
                 proxiedPlayer.hasPermission("serverm.admin") || proxiedPlayer.hasPermission("serverm.joinall") || serverObject.getAccessType().equalsIgnoreCase("all");
     }
 
+    /**
+     * send a specific player to a hub
+     *
+     * @param proxiedPlayer who's going to be sent to a hub
+     * @return whether it worked or not
+     */
     public boolean sendToHub(ProxiedPlayer proxiedPlayer) {
-        AtomicBoolean ready = new AtomicBoolean();
-        ready.set(false);
+        boolean ready = false;
         for (ServerObject so : servermanager.getLobbyMap().values()) {
             if (isAbleToJoin(proxiedPlayer, so)) {
-                servermanager.getProxy().getServerInfo(so.getServerName()).ping((result, error) -> {
-                    if (result.getPlayers().getMax() >= (result.getPlayers().getOnline()+1)) {
-                        proxiedPlayer.connect(servermanager.getProxy().getServerInfo(so.getServerName()));
-                        proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've been moved to the hub §7'§e" + so.getServerName() + "§7'§a."));
-                    }
-                });
-                if (ready.get()) break;
+                if (so.getMaxPlayers() > servermanager.getProxy().getServerInfo(so.getServerName()).getPlayers().size()) {
+                    proxiedPlayer.connect(servermanager.getProxy().getServerInfo(so.getServerName()));
+                    proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've been moved to the hub §7'§e" + so.getServerName() + "§7'§a."));
+                    ready = true;
+                    break;
+                }
             }
         }
-        return ready.get();
+        return ready;
+    }
+
+    /**
+     * change the max player account to allow more or less players to join this server
+     *
+     * @param proxiedPlayer who's trying to change the max-player amount
+     * @param servername    server where he's trying to change it
+     * @param playerCount   new player count
+     */
+    public void changeMaxPlayerCount(ProxiedPlayer proxiedPlayer, String servername, int playerCount) {
+        if (serverAlreadyRegistered(servername)) {
+            if (playerCount > 0) {
+                // server is registered and new player count is > 0
+                if (serverIsOrchestrated(servername)) {
+                    if (servermanager.getMySQLHandler().changePlayerCount(servername, playerCount)) {
+                        proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've successfully changed the max-player amount for the server §7'§e" + servername + "§7'§a to §7'§e" + playerCount + "§7'§a."));
+                    } else {
+                        proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cSorry, but we couldn't change the max-player amount for server §7'§e" + servername + "§7'§c, look into the BungeeCord console for further information."));
+                    }
+                } else {
+                    proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cTo edit the max-player count of a server, this server has to be active. " +
+                            "\n§a      §cThe server §7'§e" + servername + "§7'§c is offline."));
+                }
+            } else {
+                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThe max-player count has to be positive and greater than 0."));
+            }
+        } else {
+            proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cSorry, but we couldn't find a server with this name."));
+        }
+    }
+
+    /**
+     * checks if a player is already on a lobby server
+     * @param proxiedPlayer who's going to be checked
+     * @return whether the player is already on a lobby or not
+     */
+    public boolean isAlreadyOnLobby(ProxiedPlayer proxiedPlayer) {
+        return serverIsLobby(proxiedPlayer.getServer().getInfo().getName());
+    }
+
+    /**
+     * show's you a wonderful presentation of information about a server
+     *
+     * @param proxiedPlayer who's going to see the information
+     * @param servername    server you want to get some information from
+     */
+    public void showServerInfo(ProxiedPlayer proxiedPlayer, String servername) {
+        boolean registeredInBungee; // server is loaded in BungeeCord, may be not registered in database
+        boolean registeredInServerManager; // server is registered in database
+        ServerObject serverObject; // server info object from the database
+        serverObject = servermanager.getMySQLHandler().getServerObjectByName(servername); // get server info object from the database
+        registeredInBungee = serverAlreadyRegistered(servername); // get if server is loaded in bungeecord
+        registeredInServerManager = (serverObject != null); // get if server is registered in the database (server object null or not)
+        ServerInfo serverInfo = null;
+        System.out.println("Registered in bungee " + registeredInBungee + " | registered in server manager " + registeredInServerManager);
+        if (registeredInBungee) serverInfo = servermanager.getProxy().getServerInfo(servername);
+        if (registeredInBungee || registeredInServerManager) { // only do if server is registered in BungeeCord and/or in the database
+            proxiedPlayer.sendMessage(new TextComponent("§8-=-=-=-=- §7| §a§lServerManager §r§7| §8-=-=-=-=-")); // Header of message
+            proxiedPlayer.sendMessage(new TextComponent("§dServername: §e" + servername));
+            if (registeredInServerManager) proxiedPlayer.sendMessage(new TextComponent("§dServer-ID: §e" + serverObject.getServer_id()));
+            if (registeredInBungee) {
+                proxiedPlayer.sendMessage(new TextComponent("§a⬤ §7-> §aThis server is registered in BungeeCord."));
+            } else {
+                if (registeredInServerManager) proxiedPlayer.sendMessage(new TextComponent("§c⬤ §7-> §cThis server is §ndeactivated§r§c."));
+            }
+            if (registeredInServerManager) {
+                proxiedPlayer.sendMessage(new TextComponent("§a⬤ §7-> §aThis server is managed via ServerManager."));
+            } else {
+                proxiedPlayer.sendMessage(new TextComponent("§c⬤ §7-> §cThis server is §nnot§r§c managed via ServerManager."));
+            }
+            if (serverInfo != null) {
+                proxiedPlayer.sendMessage(new TextComponent("§dOnline players: §e" + serverInfo.getPlayers().size()));
+                if (registeredInServerManager) proxiedPlayer.sendMessage(new TextComponent("§dMax. Players: §e" + serverObject.getMaxPlayers()));
+                proxiedPlayer.sendMessage(new TextComponent("§dServer address: §e" + serverInfo.getSocketAddress().toString().replaceAll("/", "")));
+            }
+            if (registeredInServerManager) {
+                proxiedPlayer.sendMessage(new TextComponent("§dAccess-Type: §e" + serverObject.getAccessType()));
+            }
+            proxiedPlayer.sendMessage(new TextComponent("§8-=-=-=-=- §7| §a§lServerManager §r§7| §8-=-=-=-=-")); // Footer of message
+        } else {
+            proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cSorry, but we couldn't find a server with this name."));
+        }
     }
 
 

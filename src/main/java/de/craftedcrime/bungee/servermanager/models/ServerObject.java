@@ -12,14 +12,16 @@ public class ServerObject {
     private String ipAddress;
     private int port;
     private String accessType;
+    private int maxPlayers;
     private boolean active;
 
-    public ServerObject(int server_id, String serverName, String ipAddress, int port, String accessType) {
+    public ServerObject(int server_id, String serverName, String ipAddress, int port, String accessType, int maxPlayers) {
         this.server_id = server_id;
         this.serverName = serverName;
         this.ipAddress = ipAddress;
         this.port = port;
         this.accessType = accessType;
+        this.maxPlayers = maxPlayers;
     }
 
     public ServerObject() {
@@ -71,5 +73,13 @@ public class ServerObject {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public int getMaxPlayers() {
+        return maxPlayers;
+    }
+
+    public void setMaxPlayers(int maxPlayers) {
+        this.maxPlayers = maxPlayers;
     }
 }

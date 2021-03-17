@@ -47,9 +47,22 @@ public class ServerManagerCommand extends Command {
                     case "delete":
                         servermanager.getServerHandler().deleteServer(proxiedPlayer, args[1].toLowerCase());
                         break;
+                    case "info":
+                        servermanager.getServerHandler().showServerInfo(proxiedPlayer, args[1].toLowerCase());
+                        break;
                     default:
                         displayHelp(proxiedPlayer);
                         break;
+                }
+            } else if (args.length == 3) {
+                if (args[0].equalsIgnoreCase("setmaxplayer")) {
+                    if (servermanager.getGeneralUtils().isNumeric(args[2])) {
+                        servermanager.getServerHandler().changeMaxPlayerCount(proxiedPlayer, args[1], Integer.parseInt(args[2]));
+                    } else {
+                        proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cFailed to set max-player count, because §8'§e" + args[2] + "§8' §c(player amount) is not a number!"));
+                    }
+                } else {
+                    displayHelp(proxiedPlayer);
                 }
             } else if (args.length == 6) {
                 if (args[0].equalsIgnoreCase("create")) {
@@ -60,7 +73,7 @@ public class ServerManagerCommand extends Command {
                         int port = Integer.parseInt(args[3]);
                         String accessLevel = args[4].toLowerCase();
                         boolean lobby = args[5].equalsIgnoreCase("true");
-                        servermanager.getServerHandler().addServer(proxiedPlayer, new ServerObject(0, servername, ip, port, accessLevel), lobby);
+                        servermanager.getServerHandler().addServer(proxiedPlayer, new ServerObject(0, servername, ip, port, accessLevel, 20), lobby);
                     } else {
                         proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cFailed to add server, because §8'§e" + args[3] + "§8' §c(Port) is not a number!"));
                     }
@@ -84,6 +97,8 @@ public class ServerManagerCommand extends Command {
         proxiedPlayer.sendMessage(new TextComponent("§a §b §a §b §8-> §6Deactivates an activated server, that is already registered."));
         proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm delete §7<§bservername§7>", "/sm delete", "§cSuggest into chat."));
         proxiedPlayer.sendMessage(new TextComponent("§a §b §a §b §8-> §6Deletes a registered server from context."));
+        proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm setmaxplayer §7<§bservername§7> §7<§bamount of players§7>", "/sm setmaxplayer", "§cSuggest into chat."));
+        proxiedPlayer.sendMessage(new TextComponent("§a §b §a §b §8-> §6Changes the max-player count of a server."));
         proxiedPlayer.sendMessage(new TextComponent("§8-=-=-=-=- §7| §a§lServerManager §r§7| §8-=-=-=-=-"));
     }
 

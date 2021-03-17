@@ -1,10 +1,12 @@
 package de.craftedcrime.bungee.servermanager;
 
 import de.craftedcrime.bungee.servermanager.commands.GoToCommand;
+import de.craftedcrime.bungee.servermanager.commands.HubCommand;
 import de.craftedcrime.bungee.servermanager.commands.ServerCommand;
 import de.craftedcrime.bungee.servermanager.commands.ServerManagerCommand;
 import de.craftedcrime.bungee.servermanager.database.MySQLHandler;
 import de.craftedcrime.bungee.servermanager.handler.ServerHandler;
+import de.craftedcrime.bungee.servermanager.listeners.PostLoginListener;
 import de.craftedcrime.bungee.servermanager.models.ServerObject;
 import de.craftedcrime.bungee.servermanager.utils.GeneralUtils;
 import de.craftedcrime.bungee.servermanager.utils.IPValidationUtils;
@@ -38,7 +40,7 @@ public final class Servermanager extends Plugin {
 
     // ------ GENERAL ------ //
     private boolean disableDefaultBungeeCommands = false;
-    private boolean forceHub = false;
+    private boolean forceHub = true;
 
     // -------------- HANDLERS -------------- //
     // ------ MySQL Handler ------ //
@@ -67,6 +69,10 @@ public final class Servermanager extends Plugin {
         getProxy().getPluginManager().registerCommand(this, new ServerManagerCommand(this));
         getProxy().getPluginManager().registerCommand(this, new ServerCommand(this));
         getProxy().getPluginManager().registerCommand(this, new GoToCommand(this));
+        getProxy().getPluginManager().registerCommand(this, new HubCommand(this));
+
+        // register all listeners below here
+        getProxy().getPluginManager().registerListener(this, new PostLoginListener(this));
     }
 
     @Override
