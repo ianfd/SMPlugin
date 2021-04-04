@@ -18,8 +18,8 @@ public class ServerManagerCommand extends Command {
 
     private Servermanager servermanager;
 
-    public ServerManagerCommand(Servermanager servermanager) {
-        super("sm");
+    public ServerManagerCommand(String commandName, Servermanager servermanager) {
+        super(commandName);
         this.servermanager = servermanager;
     }
 
@@ -57,7 +57,7 @@ public class ServerManagerCommand extends Command {
             } else if (args.length == 3) {
                 if (args[0].equalsIgnoreCase("setmaxplayer")) {
                     if (servermanager.getGeneralUtils().isNumeric(args[2])) {
-                        servermanager.getServerHandler().changeMaxPlayerCount(proxiedPlayer, args[1], Integer.parseInt(args[2]));
+                        servermanager.getServerHandler().changeMaxPlayerCount(proxiedPlayer, args[1].toLowerCase(), Integer.parseInt(args[2]));
                     } else {
                         proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cFailed to set max-player count, because §8'§e" + args[2] + "§8' §c(player amount) is not a number!"));
                     }

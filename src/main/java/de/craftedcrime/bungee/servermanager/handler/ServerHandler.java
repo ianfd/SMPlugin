@@ -6,13 +6,14 @@ package de.craftedcrime.bungee.servermanager.handler;
  */
 
 import de.craftedcrime.bungee.servermanager.Servermanager;
-import de.craftedcrime.bungee.servermanager.models.ServerObject;
+import de.craftedcrime.infrastructure.servermanager.middleware.ServerObject;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 
 public class ServerHandler {
@@ -353,9 +354,15 @@ public class ServerHandler {
      */
     public boolean sendToHub(ProxiedPlayer proxiedPlayer) {
         boolean ready = false;
+        if (proxiedPlayer.getServer() != null && isAlreadyOnLobby(proxiedPlayer)) {
+            return true;
+        }
         for (ServerObject so : servermanager.getLobbyMap().values()) {
+            System.out.println("Inspecting server: " + so.getServerName());
             if (isAbleToJoin(proxiedPlayer, so)) {
+                System.out.println("is Able to join");
                 if (so.getMaxPlayers() > servermanager.getProxy().getServerInfo(so.getServerName()).getPlayers().size()) {
+                    System.out.println("Enough space to join!");
                     proxiedPlayer.connect(servermanager.getProxy().getServerInfo(so.getServerName()));
                     proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou've been moved to the hub §7'§e" + so.getServerName() + "§7'§a."));
                     ready = true;
@@ -364,6 +371,42 @@ public class ServerHandler {
             }
         }
         return ready;
+    }
+
+    public String getJoinableHub(ProxiedPlayer proxiedPlayer) {
+        String hub = null;
+        for (ServerObject so : servermanager.getLobbyMap().values()) {
+            System.out.println("Inspecting server: " + so.getServerName());
+            if (isAbleToJoin(proxiedPlayer, so)) {
+                System.out.println("is Able to join");
+                if (so.getMaxPlayers() > servermanager.getProxy().getServerInfo(so.getServerName()).getPlayers().size()) {
+                    System.out.println("Enough space to join!");
+                    hub = so.getServerName();
+                    break;
+                }
+            }
+        }
+        return hub;
+    }
+
+    /**
+     * send a specific player to a hub except from one specific hub
+     *
+     * @param proxiedPlayer who's going to be sent to a hub
+     * @param exceptServer  the server that's going to be ignored
+     * @return whether it worked or not
+     */
+    public String getReconnectServer(ProxiedPlayer proxiedPlayer, String exceptServer) {
+        Map<String, ServerObject> copy = new HashMap<>(servermanager.getLobbyMap());
+        copy.remove(exceptServer);
+        for (ServerObject so : copy.values()) {
+            if (isAbleToJoin(proxiedPlayer, so)) {
+                if (so.getMaxPlayers() > servermanager.getProxy().getServerInfo(so.getServerName()).getPlayers().size()) {
+                    return so.getServerName();
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -397,6 +440,7 @@ public class ServerHandler {
 
     /**
      * checks if a player is already on a lobby server
+     *
      * @param proxiedPlayer who's going to be checked
      * @return whether the player is already on a lobby or not
      */
@@ -423,7 +467,7 @@ public class ServerHandler {
         if (registeredInBungee || registeredInServerManager) { // only do if server is registered in BungeeCord and/or in the database
             proxiedPlayer.sendMessage(new TextComponent("§8-=-=-=-=- §7| §a§lServerManager §r§7| §8-=-=-=-=-")); // Header of message
             proxiedPlayer.sendMessage(new TextComponent("§dServername: §e" + servername));
-            if (registeredInServerManager) proxiedPlayer.sendMessage(new TextComponent("§dServer-ID: §e" + serverObject.getServer_id()));
+            if (registeredInServerManager) proxiedPlayer.sendMessage(new TextComponent("§dServer-ID: §e" + serverObject.getServerId()));
             if (registeredInBungee) {
                 proxiedPlayer.sendMessage(new TextComponent("§a⬤ §7-> §aThis server is registered in BungeeCord."));
             } else {

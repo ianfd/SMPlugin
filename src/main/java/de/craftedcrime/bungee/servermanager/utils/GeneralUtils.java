@@ -40,4 +40,11 @@ public class GeneralUtils {
         return ret;
     }
 
+    public TextComponent openURLThing(String baseText, String url, String hovertext) {
+        TextComponent ret = new TextComponent(baseText);
+        ret.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url));
+        ret.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(hovertext)));
+        return ret;
+    }
+
 }

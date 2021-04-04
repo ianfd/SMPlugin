@@ -6,10 +6,14 @@ import de.craftedcrime.bungee.servermanager.commands.ServerCommand;
 import de.craftedcrime.bungee.servermanager.commands.ServerManagerCommand;
 import de.craftedcrime.bungee.servermanager.database.MySQLHandler;
 import de.craftedcrime.bungee.servermanager.handler.ServerHandler;
+import de.craftedcrime.bungee.servermanager.http.WebEditClient;
+import de.craftedcrime.bungee.servermanager.http.WebEditService;
 import de.craftedcrime.bungee.servermanager.listeners.PostLoginListener;
-import de.craftedcrime.bungee.servermanager.models.ServerObject;
+import de.craftedcrime.bungee.servermanager.listeners.ServerConnectListener;
+import de.craftedcrime.bungee.servermanager.listeners.ServerKickListener;
 import de.craftedcrime.bungee.servermanager.utils.GeneralUtils;
 import de.craftedcrime.bungee.servermanager.utils.IPValidationUtils;
+import de.craftedcrime.infrastructure.servermanager.middleware.ServerObject;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -18,6 +22,7 @@ import net.md_5.bungee.config.YamlConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.logging.Level;
 
@@ -28,6 +33,7 @@ public final class Servermanager extends Plugin {
     private HashMap<String, ServerObject> noLobbiesMap = new HashMap<>();
     private ServerHandler serverHandler;
     private Configuration configuration;
+    private WebEditClient webEditClient;
 
     // -------------- VARIABLES -------------- //
     // ------ DATABASE ------ //
@@ -61,18 +67,28 @@ public final class Servermanager extends Plugin {
         loadConfig();
         this.serverHandler = new ServerHandler(this);
         this.mySQLHandler = new MySQLHandler(db_name, db_url, db_username, db_password, this);
-        // TODO: load servers implementation
-
+        this.webEditClient = new WebEditClient();
 
         loadServers();
+        disableDefaultCommands();
+
+        if (disableDefaultBungeeCommands) {
+            getProxy().getPluginManager().registerCommand(this, new ServerCommand("servers", this));
+        }
         // register all commands below here
-        getProxy().getPluginManager().registerCommand(this, new ServerManagerCommand(this));
-        getProxy().getPluginManager().registerCommand(this, new ServerCommand(this));
-        getProxy().getPluginManager().registerCommand(this, new GoToCommand(this));
+        getProxy().getPluginManager().registerCommand(this, new ServerManagerCommand("sm", this));
+        getProxy().getPluginManager().registerCommand(this, new GoToCommand("goto", this));
         getProxy().getPluginManager().registerCommand(this, new HubCommand(this));
+        // TODO: add command send (non disabled sendplayer)
+        // TODO: add command glist
+        // TODO: add command tm / teamchat / teammessage
+        // TODO: add command teamlist / tl
+
 
         // register all listeners below here
         getProxy().getPluginManager().registerListener(this, new PostLoginListener(this));
+        getProxy().getPluginManager().registerListener(this, new ServerKickListener(this));
+        getProxy().getPluginManager().registerListener(this, new ServerConnectListener(this));
     }
 
     @Override
@@ -83,6 +99,29 @@ public final class Servermanager extends Plugin {
     private void disableDefaultCommands() {
         if (this.disableDefaultBungeeCommands) {
             getLogger().log(Level.INFO, "Disabling the default bungee commands. The commands /server, /glist, /send are disabled.");
+            Collection<Plugin> pluginsList = getProxy().getPluginManager().getPlugins();
+            for (Plugin p : pluginsList) {
+                switch (p.getFile().getName()) {
+                    case "cmd_server.jar":
+                        getProxy().getPluginManager().unregisterCommands(p);
+                        getLogger().log(Level.INFO, "Unregistering command /server");
+                        break;
+                    case "cmd_send.jar":
+                        getProxy().getPluginManager().unregisterCommands(p);
+                        getLogger().log(Level.INFO, "Unregistering command /send");
+                        break;
+                    case "cmd_list.jar":
+                        getProxy().getPluginManager().unregisterCommands(p);
+                        getLogger().log(Level.INFO, "Unregistering command /glist");
+                        break;
+                    case "cmd_find.jar":
+                        getProxy().getPluginManager().unregisterCommands(p);
+                        getLogger().log(Level.INFO, "Unregistering command /find");
+                        break;
+                    default:
+                        break;
+                }
+            }
         } else {
             getLogger().log(Level.INFO, "Attention! The default bungeecord commands are still enabled! If you don't configure the permissions otherwise, this could be a security risk. " +
                     "Keep that in mind! Following commands should be deactivated: ()");
@@ -152,14 +191,6 @@ public final class Servermanager extends Plugin {
         }
 
 
-        // loading the configuration
-        System.out.println("LOADED PLUGINS!!! START");
-        getProxy().getPluginManager().getPlugins().forEach(plugin -> System.out.println("NAME OF PLUGIN" + plugin.getFile().getName()));
-        System.out.println("LOADED PLUGINS!!! END");
-    }
-
-    private void disableDefaultCommads() {
-        //getProxy().getPluginManager().pl
     }
 
     private void loadServers() {
@@ -189,5 +220,9 @@ public final class Servermanager extends Plugin {
 
     public boolean isForceHub() {
         return forceHub;
+    }
+
+    public WebEditClient getWebEditClient() {
+        return webEditClient;
     }
 }

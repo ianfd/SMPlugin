@@ -21,13 +21,10 @@ public class PostLoginListener implements Listener {
 
     @EventHandler
     public void onPostLogin(PostLoginEvent event) {
-        if (servermanager.isForceHub()) {
-            if (!servermanager.getServerHandler().sendToHub(event.getPlayer())) {
-                event.getPlayer().disconnect(new TextComponent("§8| §aServerManager §8| §cWe couldn't find a hub you can join. §ePlease try again later or connect the support team."));
-            }
-        } else {
-            System.out.println("CONNECT SERVER " + event.getPlayer().getReconnectServer().getName());
-        }
-
+        //if (servermanager.isForceHub()) {
+        //    if (!servermanager.getServerHandler().sendToHub(event.getPlayer())) {
+        //        event.getPlayer().disconnect(new TextComponent("§8| §aServerManager §8| §cWe couldn't find a hub you can join. §ePlease try again later or connect the support team."));
+        //    }
+        //}
     }
 }

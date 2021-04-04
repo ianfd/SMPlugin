@@ -6,7 +6,7 @@ package de.craftedcrime.bungee.servermanager.commands;
  */
 
 import de.craftedcrime.bungee.servermanager.Servermanager;
-import de.craftedcrime.bungee.servermanager.models.ServerObject;
+import de.craftedcrime.infrastructure.servermanager.middleware.ServerObject;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -16,8 +16,8 @@ public class ServerCommand extends Command {
 
     private Servermanager servermanager;
 
-    public ServerCommand(Servermanager servermanager) {
-        super("server");
+    public ServerCommand(String commandName, Servermanager servermanager) {
+        super(commandName);
         this.servermanager = servermanager;
     }
 
@@ -29,7 +29,7 @@ public class ServerCommand extends Command {
                 // show all the servers the player has access to
                 showServersWithAccess(proxiedPlayer);
             } else if (args.length == 1) {
-
+                servermanager.getServerHandler().sendPlayerToServer(proxiedPlayer, args[0]);
             } else {
 
             }

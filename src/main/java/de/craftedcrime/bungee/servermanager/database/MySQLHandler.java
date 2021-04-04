@@ -6,7 +6,7 @@ package de.craftedcrime.bungee.servermanager.database;
  */
 
 import de.craftedcrime.bungee.servermanager.Servermanager;
-import de.craftedcrime.bungee.servermanager.models.ServerObject;
+import de.craftedcrime.infrastructure.servermanager.middleware.ServerObject;
 
 import java.sql.*;
 import java.util.HashMap;
@@ -88,7 +88,7 @@ public class MySQLHandler {
             ResultSet rs = statement.executeQuery("SELECT * FROM server_manager_lobby WHERE lobby_active=true"); // get all entries from the server_manager_lobbies table
             while (rs.next()) {
                 ServerObject serverObject = new ServerObject();
-                serverObject.setServer_id(rs.getInt("lobby_id"));
+                serverObject.setServerId(rs.getInt("lobby_id"));
                 serverObject.setServerName(rs.getString("lobby_name"));
                 serverObject.setIpAddress(rs.getString("lobby_ip"));
                 serverObject.setPort(rs.getInt("lobby_port"));
@@ -111,7 +111,7 @@ public class MySQLHandler {
             ResultSet rs = statement.executeQuery("SELECT * FROM server_manager_lobby"); // get all entries from the server_manager_lobbies table
             while (rs.next()) {
                 ServerObject serverObject = new ServerObject();
-                serverObject.setServer_id(rs.getInt("lobby_id"));
+                serverObject.setServerId(rs.getInt("lobby_id"));
                 serverObject.setServerName(rs.getString("lobby_name"));
                 serverObject.setIpAddress(rs.getString("lobby_ip"));
                 serverObject.setPort(rs.getInt("lobby_port"));
@@ -134,7 +134,7 @@ public class MySQLHandler {
             ResultSet rs = statement.executeQuery("SELECT * FROM server_manager WHERE server_active=true"); // get all entries from the server_manager table
             while (rs.next()) {
                 ServerObject serverObject = new ServerObject();
-                serverObject.setServer_id(rs.getInt("server_id"));
+                serverObject.setServerId(rs.getInt("server_id"));
                 serverObject.setServerName(rs.getString("server_name"));
                 serverObject.setIpAddress(rs.getString("server_ip"));
                 serverObject.setPort(rs.getInt("server_port"));
@@ -157,7 +157,7 @@ public class MySQLHandler {
             ResultSet rs = statement.executeQuery("SELECT * FROM server_manager"); // get all entries from the server_manager table
             while (rs.next()) {
                 ServerObject serverObject = new ServerObject();
-                serverObject.setServer_id(rs.getInt("server_id"));
+                serverObject.setServerId(rs.getInt("server_id"));
                 serverObject.setServerName(rs.getString("server_name"));
                 serverObject.setIpAddress(rs.getString("server_ip"));
                 serverObject.setPort(rs.getInt("server_port"));
@@ -199,7 +199,7 @@ public class MySQLHandler {
                 if (rs.next()) {
                     serverObject = new ServerObject();
                     serverObject.setServerName(rs.getString("lobby_name"));
-                    serverObject.setServer_id(rs.getInt("lobby_id"));
+                    serverObject.setServerId(rs.getInt("lobby_id"));
                     serverObject.setActive(rs.getBoolean("lobby_active"));
                     serverObject.setPort(rs.getInt("lobby_port"));
                     serverObject.setIpAddress(rs.getString("lobby_ip"));
@@ -211,7 +211,7 @@ public class MySQLHandler {
                 if (rs.next()) {
                     serverObject = new ServerObject();
                     serverObject.setServerName(rs.getString("server_name"));
-                    serverObject.setServer_id(rs.getInt("server_id"));
+                    serverObject.setServerId(rs.getInt("server_id"));
                     serverObject.setActive(rs.getBoolean("server_active"));
                     serverObject.setPort(rs.getInt("server_port"));
                     serverObject.setIpAddress(rs.getString("server_ip"));

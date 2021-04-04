@@ -15,8 +15,8 @@ public class GoToCommand extends Command {
 
     private Servermanager servermanager;
 
-    public GoToCommand(Servermanager servermanager) {
-        super("goto");
+    public GoToCommand(String commandName, Servermanager servermanager) {
+        super(commandName);
         this.servermanager = servermanager;
     }
 
@@ -25,7 +25,7 @@ public class GoToCommand extends Command {
         if (sender instanceof ProxiedPlayer) {
             ProxiedPlayer proxiedPlayer = (ProxiedPlayer) sender;
             if (args.length == 1) {
-                servermanager.getServerHandler().sendPlayerToServer(proxiedPlayer, args[0]);
+                servermanager.getServerHandler().sendPlayerToServer(proxiedPlayer, args[0].toLowerCase());
             } else {
                 displayHelp(proxiedPlayer);
             }

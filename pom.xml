@@ -59,6 +59,10 @@
             <id>bungeecord-repo</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
+        <repository>
+            <id>ianfd</id>
+            <url>https://nexus.ianfd.de/repository/ianfd/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -88,6 +92,11 @@
             <groupId>com.squareup.retrofit2</groupId>
             <artifactId>converter-gson</artifactId>
             <version>2.9.0</version>
+        </dependency>
+        <dependency>
+            <groupId>de.craftedcrime.infrastructure.servermanager</groupId>
+            <artifactId>middleware</artifactId>
+            <version>1.0.0</version>
         </dependency>
     </dependencies>
 </project>
