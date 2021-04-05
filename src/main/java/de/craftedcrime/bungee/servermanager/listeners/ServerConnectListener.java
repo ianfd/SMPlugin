@@ -34,7 +34,7 @@ public class ServerConnectListener implements Listener {
                 String hub = servermanager.getServerHandler().getJoinableHub(event.getPlayer());
                 if (hub != null) {
                     event.setTarget(servermanager.getProxy().getServerInfo(hub));
-                    event.getPlayer().sendMessage(new TextComponent("§8| §aServerManager §8| §cYou're not allowed to join this server.o"));
+                    event.getPlayer().sendMessage(new TextComponent("§8| §aServerManager §8| §aYou were moved to a lobby-server."));
                 } else {
                     event.setCancelled(true);
                     event.getPlayer().disconnect(new TextComponent("§8| §aServerManager §8| §cThere was no fallback available for you.\n§ePlease try again!"));

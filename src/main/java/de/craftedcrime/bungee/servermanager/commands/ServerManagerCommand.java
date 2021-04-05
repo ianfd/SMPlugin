@@ -6,7 +6,7 @@ package de.craftedcrime.bungee.servermanager.commands;
  */
 
 import de.craftedcrime.bungee.servermanager.Servermanager;
-import de.craftedcrime.bungee.servermanager.models.ServerObject;
+import de.craftedcrime.infrastructure.servermanager.middleware.ServerObject;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -31,10 +31,16 @@ public class ServerManagerCommand extends Command {
             if (args.length == 0) {
                 displayHelp(proxiedPlayer);
             } else if (args.length == 1) {
-                if (args[0].equalsIgnoreCase("list-all")) {
-                    displayAllServerInfo(proxiedPlayer);
-                } else {
-                    displayHelp(proxiedPlayer);
+                switch (args[0].toLowerCase()) {
+                    case "list-all":
+                        displayAllServerInfo(proxiedPlayer);
+                        break;
+                    case "webeditor":
+                        servermanager.getWebEditHandler().startWebEditSession(proxiedPlayer);
+                        break;
+                    default:
+                        displayHelp(proxiedPlayer);
+                        break;
                 }
             } else if (args.length == 2) {
                 switch (args[0].toLowerCase()) {
@@ -55,14 +61,20 @@ public class ServerManagerCommand extends Command {
                         break;
                 }
             } else if (args.length == 3) {
-                if (args[0].equalsIgnoreCase("setmaxplayer")) {
-                    if (servermanager.getGeneralUtils().isNumeric(args[2])) {
-                        servermanager.getServerHandler().changeMaxPlayerCount(proxiedPlayer, args[1].toLowerCase(), Integer.parseInt(args[2]));
-                    } else {
-                        proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cFailed to set max-player count, because §8'§e" + args[2] + "§8' §c(player amount) is not a number!"));
-                    }
-                } else {
-                    displayHelp(proxiedPlayer);
+                switch (args[0].toLowerCase()) {
+                    case "setmaxplayer":
+                        if (servermanager.getGeneralUtils().isNumeric(args[2])) {
+                            servermanager.getServerHandler().changeMaxPlayerCount(proxiedPlayer, args[1].toLowerCase(), Integer.parseInt(args[2]));
+                        } else {
+                            proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cFailed to set max-player count, because §8'§e" + args[2] + "§8' §c(player amount) is not a number!"));
+                        }
+                        break;
+                    case "save":
+                        servermanager.getWebEditHandler().saveConfig(args[1], args[2], proxiedPlayer);
+                        break;
+                    default:
+                        displayHelp(proxiedPlayer);
+                        break;
                 }
             } else if (args.length == 6) {
                 if (args[0].equalsIgnoreCase("create")) {
@@ -73,7 +85,7 @@ public class ServerManagerCommand extends Command {
                         int port = Integer.parseInt(args[3]);
                         String accessLevel = args[4].toLowerCase();
                         boolean lobby = args[5].equalsIgnoreCase("true");
-                        servermanager.getServerHandler().addServer(proxiedPlayer, new ServerObject(0, servername, ip, port, accessLevel, 20), lobby);
+                        servermanager.getServerHandler().addServer(proxiedPlayer, new ServerObject(0, servername, ip, port, accessLevel, 20, true), lobby);
                     } else {
                         proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cFailed to add server, because §8'§e" + args[3] + "§8' §c(Port) is not a number!"));
                     }
@@ -128,7 +140,7 @@ public class ServerManagerCommand extends Command {
     }
 
     private void displayServerInfo(ProxiedPlayer proxiedPlayer, ServerObject serverObject) {
-        proxiedPlayer.sendMessage(new TextComponent("§8| §6§l" + serverObject.getServer_id() + " §r§8| §9§l" + serverObject.getServerName() + " §r§8| §a§l" + serverObject.getIpAddress() +
+        proxiedPlayer.sendMessage(new TextComponent("§8| §6§l" + serverObject.getServerId() + " §r§8| §9§l" + serverObject.getServerName() + " §r§8| §a§l" + serverObject.getIpAddress() +
                 " §r§8| §d§l" + serverObject.getAccessType() + " §r§8| §e§l" + serverObject.isActive()));
     }
 }

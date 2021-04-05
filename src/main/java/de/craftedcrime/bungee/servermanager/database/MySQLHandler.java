@@ -92,6 +92,7 @@ public class MySQLHandler {
                 serverObject.setServerName(rs.getString("lobby_name"));
                 serverObject.setIpAddress(rs.getString("lobby_ip"));
                 serverObject.setPort(rs.getInt("lobby_port"));
+                serverObject.setActive(rs.getBoolean("lobby_active"));
                 serverObject.setAccessType(rs.getString("lobby_access_type"));
                 serverObject.setMaxPlayers(rs.getInt("lobby_max_players"));
                 smret.put(serverObject.getServerName(), serverObject);
@@ -138,6 +139,7 @@ public class MySQLHandler {
                 serverObject.setServerName(rs.getString("server_name"));
                 serverObject.setIpAddress(rs.getString("server_ip"));
                 serverObject.setPort(rs.getInt("server_port"));
+                serverObject.setActive(rs.getBoolean("server_active"));
                 serverObject.setAccessType(rs.getString("server_access_type"));
                 serverObject.setMaxPlayers(rs.getInt("server_max_players"));
                 smret.put(serverObject.getServerName(), serverObject);
@@ -189,6 +191,25 @@ public class MySQLHandler {
         }
         return pre;
     }
+
+    public boolean serverExistsByID(int id, boolean lobby) {
+        boolean pre = false;
+        try {
+            if (lobby) {
+                ResultSet rs = statement.executeQuery("SELECT lobby_id FROM server_manager_lobby WHERE lobby_id="+ id);
+                pre = rs.next();
+                rs.close();
+            } else {
+                ResultSet rsn = statement.executeQuery("SELECT server_id FROM server_manager WHERE server_id="+id);
+                pre = rsn.next();
+                rsn.close();
+            }
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return pre;
+    }
+
 
     public ServerObject getServerObjectByName(String servername) {
         ServerObject serverObject = null;
@@ -249,6 +270,52 @@ public class MySQLHandler {
         }
     }
 
+    public void modifyServer(ServerObject serverObject, boolean lobby) {
+        if (serverObject.getServerName().isEmpty() || serverObject.getServerName().isBlank()) {
+            servermanager.getLogger().log(Level.WARNING, "Name is not valid!");
+            return;
+        }
+        if (serverObject.getPort() < 0 || serverObject.getPort() > 65535) {
+            servermanager.getLogger().log(Level.WARNING, "Port is out of range!");
+            return;
+        }
+        if (!servermanager.getIpValidationUtils().isValidInet4Address(serverObject.getIpAddress())) {
+            servermanager.getLogger().log(Level.WARNING, "This is not an IP-Address");
+            return;
+        }
+        if (serverObject.getMaxPlayers() < 0) {
+            servermanager.getLogger().log(Level.WARNING, "The player count has to be greater than 0.");
+            return;
+        }
+        if (serverObject.getAccessType().isBlank() || serverObject.getAccessType().isEmpty()) {
+            servermanager.getLogger().log(Level.WARNING, "You have to enter an access type.");
+            return;
+        }
+        if (serverExistsByID(serverObject.getServerId(), lobby)) {
+            try {
+                PreparedStatement preparedStatement;
+                if (lobby) {
+                    preparedStatement = connection.prepareStatement("UPDATE server_manager_lobby SET lobby_max_players=?,lobby_name=?,lobby_active=?,lobby_access_type=?,lobby_port=?,lobby_ip=? WHERE lobby_id=?");
+                } else {
+                    preparedStatement = connection.prepareStatement("UPDATE server_manager SET server_max_players=?,server_name=?,server_active=?,server_access_type=?,server_port=?,server_ip=? WHERE server_id=?");
+                }
+                preparedStatement.setInt(1, serverObject.getServerId());
+                preparedStatement.setString(2, serverObject.getServerName());
+                preparedStatement.setBoolean(3, serverObject.isActive());
+                preparedStatement.setString(4, serverObject.getAccessType());
+                preparedStatement.setInt(5, serverObject.getPort());
+                preparedStatement.setString(6, serverObject.getIpAddress());
+                preparedStatement.setInt(7, serverObject.getServerId());
+                preparedStatement.execute();
+                servermanager.getLogger().log(Level.INFO, "[Modify Server] Successfully deleted the server with the ID: " + serverObject.getServerId());
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+        } else {
+            servermanager.getLogger().log(Level.WARNING, "[Modify Server] Failed to edit a server with the ID: " + serverObject.getServerId() + ", it doesn't exist.");
+        }
+    }
+
     // deletes a minecraft server from the context
     public boolean deleteServer(String servername, boolean lobby) {
         if (serverExists(servername)) {
@@ -263,6 +330,7 @@ public class MySQLHandler {
                 preparedStatement.execute();
                 servermanager.getLogger().log(Level.INFO, "[Delete Server] Successfully deleted '" + servername + "' from the database.");
                 servermanager.getNoLobbiesMap().remove(servername);
+                servermanager.getLobbyMap().remove(servername);
                 servermanager.getLogger().log(Level.INFO, "[Delete Server] Successfully deleted '" + servername + "' from internal context.");
                 return true;
             } catch (SQLException throwables) {
@@ -272,6 +340,25 @@ public class MySQLHandler {
             }
         }
         return false;
+    }
+
+    public void deleteServerById(int serverId, boolean lobby) {
+        if (serverExistsByID(serverId, lobby)) {
+            try {
+                PreparedStatement preparedStatement;
+                if (!lobby) {
+                    preparedStatement = connection.prepareStatement("DELETE FROM server_manager WHERE server_id=?;");
+                } else {
+                    preparedStatement = connection.prepareStatement("DELETE FROM server_manager_lobby WHERE lobby_id=?;");
+                }
+                preparedStatement.setInt(1, serverId);
+                preparedStatement.execute();
+                servermanager.getLogger().log(Level.INFO, "[Delete Server] Successfully deleted '" + serverId + "' from the database.");
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+                servermanager.getLogger().log(Level.WARNING, "[Delete Server] Failed to delete the server '" + serverId + "' from the database. Please check your db-config.");
+            }
+        }
     }
 
     public boolean deactivateServer(String servername, boolean lobby) {

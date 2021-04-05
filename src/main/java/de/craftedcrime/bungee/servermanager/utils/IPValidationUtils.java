@@ -18,7 +18,7 @@ public class IPValidationUtils {
 
     private static final Pattern IPv4_PATTERN = Pattern.compile(IPV4_REGEX);
 
-    public static boolean isValidInet4Address(String ip) {
+    public boolean isValidInet4Address(String ip) {
         if (ip == null) {
             return false;
         }

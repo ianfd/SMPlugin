@@ -1,6 +1,7 @@
 # The default config for the ServerManager (Enables possibility to orchestrate servers)
 # Documentation and Tutorials are available under: URL TBA
 server:
+  # !! This feature is currently not implemented !!
   # This enables the orchestration feature of ServerManager. (TBD) PLEASE READ THIS BEFORE YOU ACTIVATE THIS FEATURE -> URL TBA
   orchestration: false
   connections:
@@ -28,9 +29,10 @@ server:
       password:
     # Disables all 'default' commands of bungeecord. This includes: /server , /send , /glist
   disable_default_bungeecord_commands: true
-  # Enable the possibility to edit your ServerManager configuration via the web editor. Help available under: https://webeditor.sm.craftedcrime.de/help
+  # Enable the possibility to edit your ServerManager configuration via the web editor. Help available under: https://sm.craftedcrime.de/help
   enable_web_editor: false
 stats:
+  # !! This feature is currently not implemented !!
   # Stats are used to determine how many players and servers are using this plugin. (TBD)
   # These stats are visible for everyone!
   # What's logged? What stats do I use?

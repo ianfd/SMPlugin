@@ -6,8 +6,8 @@ import de.craftedcrime.bungee.servermanager.commands.ServerCommand;
 import de.craftedcrime.bungee.servermanager.commands.ServerManagerCommand;
 import de.craftedcrime.bungee.servermanager.database.MySQLHandler;
 import de.craftedcrime.bungee.servermanager.handler.ServerHandler;
+import de.craftedcrime.bungee.servermanager.handler.WebEditHandler;
 import de.craftedcrime.bungee.servermanager.http.WebEditClient;
-import de.craftedcrime.bungee.servermanager.http.WebEditService;
 import de.craftedcrime.bungee.servermanager.listeners.PostLoginListener;
 import de.craftedcrime.bungee.servermanager.listeners.ServerConnectListener;
 import de.craftedcrime.bungee.servermanager.listeners.ServerKickListener;
@@ -45,12 +45,14 @@ public final class Servermanager extends Plugin {
     private String db_password = "";
 
     // ------ GENERAL ------ //
-    private boolean disableDefaultBungeeCommands = false;
+    private boolean disableDefaultBungeeCommands = true;
     private boolean forceHub = true;
 
     // -------------- HANDLERS -------------- //
     // ------ MySQL Handler ------ //
     private MySQLHandler mySQLHandler;
+    // ------ WebEditor Handler ------ //
+    private WebEditHandler webEditHandler;
 
     // -------------- UTILS -------------- //
     // ------ IP Validation Utils ------ //
@@ -68,11 +70,14 @@ public final class Servermanager extends Plugin {
         this.serverHandler = new ServerHandler(this);
         this.mySQLHandler = new MySQLHandler(db_name, db_url, db_username, db_password, this);
         this.webEditClient = new WebEditClient();
+        this.webEditHandler = new WebEditHandler(this);
 
         loadServers();
         disableDefaultCommands();
 
         if (disableDefaultBungeeCommands) {
+            getProxy().getPluginManager().registerCommand(this, new ServerCommand("server", this));
+        } else {
             getProxy().getPluginManager().registerCommand(this, new ServerCommand("servers", this));
         }
         // register all commands below here
@@ -224,5 +229,13 @@ public final class Servermanager extends Plugin {
 
     public WebEditClient getWebEditClient() {
         return webEditClient;
+    }
+
+    public WebEditHandler getWebEditHandler() {
+        return webEditHandler;
+    }
+
+    public IPValidationUtils getIpValidationUtils() {
+        return ipValidationUtils;
     }
 }

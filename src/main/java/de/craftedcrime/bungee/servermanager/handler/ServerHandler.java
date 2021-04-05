@@ -41,6 +41,10 @@ public class ServerHandler {
             proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §eYou can lookup all registered servers via: §6§l/sm list-all "));
             return;
         }
+        if (!servermanager.getIpValidationUtils().isValidInet4Address(serverObject.getIpAddress())) {
+            proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cThe IP-Address §8(§7'§b" + serverObject.getIpAddress() + "§7'§8)§c you've entered isn't valid."));
+            return;
+        }
         boolean restricted = true;
         if (serverObject.getAccessType().equalsIgnoreCase("all")) restricted = false;
         ServerInfo serverInfo = servermanager.getProxy().constructServerInfo(serverObject.getServerName(), new InetSocketAddress(serverObject.getIpAddress(), serverObject.getPort()), "Just another server", restricted);
