@@ -26,15 +26,16 @@ public class WebEditHandler {
     public void startWebEditSession(ProxiedPlayer proxiedPlayer) {
         if (lastUploadedConfig != 0) {
             if ((System.currentTimeMillis() - lastUploadedConfig) < 1000 * 60 * 15) {
-                long timeleft = ((lastUploadedConfig+1000*60*15) - System.currentTimeMillis()) / 1000;
+                long timeleft = ((lastUploadedConfig + 1000 * 60 * 15) - System.currentTimeMillis()) / 1000;
                 proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cUnable to perform action! Sorry, but you are not allowed to to this. " +
-                        "You still have to wait: §6 " + ((int) (timeleft / 60)) + " minutes and " + ((int) (timeleft % 60)) + "."));
+                        "You still have to wait:§6 " + ((int) (timeleft / 60)) + " minutes and " + ((int) (timeleft % 60)) + " seconds."));
                 return;
             }
         }
         proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aPlease wait ... we are preparing the editor for you."));
         try {
-            Response<KeySecretPair> response = servermanager.getWebEditClient().webEditService.startEditing(new ConfigUpload("dummy", 100, servermanager.getLobbyMap(),
+            Response<KeySecretPair> response = servermanager.getWebEditClient().webEditService.startEditing(new ConfigUpload(servermanager.getMotd(),
+                    servermanager.getMaxp(), servermanager.getLobbyMap(),
                     servermanager.getNoLobbiesMap())).execute();
             if (response.isSuccessful() && response.body() != null) {
                 lastUploadedConfig = System.currentTimeMillis();
@@ -69,7 +70,7 @@ public class WebEditHandler {
             if (response.isSuccessful() && response.body() != null) {
                 savingProcess(response.body(), proxiedPlayer);
             } else {
-
+                proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §cWe couldn't complete your save, please try again."));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -149,11 +150,14 @@ public class WebEditHandler {
                     servermanager.getMySQLHandler().deleteServerById(s.getServerObject().getServerId(), s.isLobby());
                 }
             }
-
             servermanager.getProxy().getConsole().sendMessage(new TextComponent("§8 -> §aReloading lobbies and non-lobbies!"));
+            servermanager.saveMotdAndMaxP(configEdit.getMotdBungee().replace('&', '§'), configEdit.getMaxPlayerBungee());
             servermanager.getServerHandler().initAllLobbies();
             servermanager.getServerHandler().initAllNonLobbies();
         } else {
+            proxiedPlayer.sendMessage(new TextComponent("saving MOTD: ' " + configEdit.getMotdBungee() + " '"));
+            proxiedPlayer.sendMessage(new TextComponent("saving max players: ' " + configEdit.getMaxPlayerBungee() + " '"));
+            servermanager.saveMotdAndMaxP(configEdit.getMotdBungee().replace('&', '§'), configEdit.getMaxPlayerBungee());
             proxiedPlayer.sendMessage(new TextComponent("nothing to do in here !!!!"));
         }
 

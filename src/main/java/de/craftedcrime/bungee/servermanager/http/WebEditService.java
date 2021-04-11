@@ -16,7 +16,7 @@ import retrofit2.http.Query;
 
 public interface WebEditService {
 
-    @GET("/edit/serverget")
+    @GET("/edit/getserver")
     Call<ConfigEdit> downloadConfigEdit(@Query("key") String key, @Query("secret") String secret);
 
     @POST("/generatekey")

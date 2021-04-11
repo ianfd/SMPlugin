@@ -103,14 +103,18 @@ public class ServerManagerCommand extends Command {
         proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm create §7<§bservername§7> §7<§bIP-Address§7> §7<§bPort§7> §7<§bAccess Level§7> §7<§blobby true/false§7>", "sm create"
                 , "§cSuggest into chat."));
         proxiedPlayer.sendMessage(new TextComponent("§a §b §a §b §8-> §6Creates a new server in the bungeecord management context"));
-        proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm activate §7<§bservername§7>", "/sm activate", "§cSuggest into chat."));
+        proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm activate §7<§bservername§7>", "/sm activate", "§aSuggest into chat."));
         proxiedPlayer.sendMessage(new TextComponent("§a §b §a §b §8-> §6Activates a deactivated server, that is already registered."));
-        proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm deactivate §7<§bservername§7>", "/sm deactivate", "§cSuggest into chat."));
+        proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm deactivate §7<§bservername§7>", "/sm deactivate", "§aSuggest into chat."));
         proxiedPlayer.sendMessage(new TextComponent("§a §b §a §b §8-> §6Deactivates an activated server, that is already registered."));
-        proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm delete §7<§bservername§7>", "/sm delete", "§cSuggest into chat."));
+        proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm delete §7<§bservername§7>", "/sm delete", "§aSuggest into chat."));
         proxiedPlayer.sendMessage(new TextComponent("§a §b §a §b §8-> §6Deletes a registered server from context."));
-        proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm setmaxplayer §7<§bservername§7> §7<§bamount of players§7>", "/sm setmaxplayer", "§cSuggest into chat."));
+        proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm setmaxplayer §7<§bservername§7> §7<§bamount of players§7>", "/sm setmaxplayer", "§aSuggest into chat."));
         proxiedPlayer.sendMessage(new TextComponent("§a §b §a §b §8-> §6Changes the max-player count of a server."));
+        proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm webeditor", "/sm webeditor", "§aSuggest into chat."));
+        proxiedPlayer.sendMessage(new TextComponent("§a §b §a §b §8-> §6Starts an editing session for you."));
+        proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm save §7<§bkey§7> §7<§bsecret§7>", "/sm save", "§aSuggest into chat."));
+        proxiedPlayer.sendMessage(new TextComponent("§a §b §a §b §8-> §6Saves your web editing session onto your server."));
         proxiedPlayer.sendMessage(new TextComponent("§8-=-=-=-=- §7| §a§lServerManager §r§7| §8-=-=-=-=-"));
     }
 

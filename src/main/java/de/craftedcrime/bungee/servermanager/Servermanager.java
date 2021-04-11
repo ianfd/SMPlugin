@@ -11,9 +11,11 @@ import de.craftedcrime.bungee.servermanager.http.WebEditClient;
 import de.craftedcrime.bungee.servermanager.listeners.PostLoginListener;
 import de.craftedcrime.bungee.servermanager.listeners.ServerConnectListener;
 import de.craftedcrime.bungee.servermanager.listeners.ServerKickListener;
+import de.craftedcrime.bungee.servermanager.listeners.ServerPingListener;
 import de.craftedcrime.bungee.servermanager.utils.GeneralUtils;
 import de.craftedcrime.bungee.servermanager.utils.IPValidationUtils;
 import de.craftedcrime.infrastructure.servermanager.middleware.ServerObject;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -34,6 +36,7 @@ public final class Servermanager extends Plugin {
     private ServerHandler serverHandler;
     private Configuration configuration;
     private WebEditClient webEditClient;
+    private String version;
 
     // -------------- VARIABLES -------------- //
     // ------ DATABASE ------ //
@@ -47,6 +50,8 @@ public final class Servermanager extends Plugin {
     // ------ GENERAL ------ //
     private boolean disableDefaultBungeeCommands = true;
     private boolean forceHub = true;
+    private String motd = "§aThis is just a bungeecord server.";
+    private int maxp = 100;
 
     // -------------- HANDLERS -------------- //
     // ------ MySQL Handler ------ //
@@ -64,6 +69,8 @@ public final class Servermanager extends Plugin {
     public void onEnable() {
         // Plugin startup logic
         // TODO: load config implementation
+        // set the version
+        this.version = getDescription().getVersion();
         ipValidationUtils = new IPValidationUtils();
         generalUtils = new GeneralUtils();
         loadConfig();
@@ -94,6 +101,7 @@ public final class Servermanager extends Plugin {
         getProxy().getPluginManager().registerListener(this, new PostLoginListener(this));
         getProxy().getPluginManager().registerListener(this, new ServerKickListener(this));
         getProxy().getPluginManager().registerListener(this, new ServerConnectListener(this));
+        getProxy().getPluginManager().registerListener(this, new ServerPingListener(this));
     }
 
     @Override
@@ -152,28 +160,28 @@ public final class Servermanager extends Plugin {
             configuration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(configFile);
             // ------------------------------ MYSQL LOAD CONFIG ------------------------------
             // ---------- Load HOSTNAME and PORT ----------
-            if ((configuration.get("server.connections.mysql.hostname") != null) && (configuration.get("server.connections.mysql.port") != null)) {
+            if ((configuration.getString("server.connections.mysql.hostname") != null) && (configuration.getString("server.connections.mysql.port") != null)) {
                 this.db_url = configuration.getString("server.connections.mysql.hostname") + ":" + configuration.getInt("server.connections.mysql.port");
             } else {
                 getProxy().stop("§4ERROR! §cUnable to load MySQL config, because hostname and/or port is not given. Without that the ServerManager Plugin cant be used!");
             }
 
             // ---------- Load DATABASE ----------
-            if (configuration.get("server.connections.mysql.database") != null) {
+            if (configuration.getString("server.connections.mysql.database") != null) {
                 this.db_name = configuration.getString("server.connections.mysql.database");
             } else {
                 getProxy().stop("§4ERROR! §cUnable to load MySQL config, because the database is not given, it's necessary.");
             }
 
             // ---------- Load USERNAME ----------
-            if (configuration.get("server.connections.mysql.username") != null) {
+            if (configuration.getString("server.connections.mysql.username") != null) {
                 this.db_username = configuration.getString("server.connections.mysql.username");
             } else {
                 getProxy().stop("§4ERROR! §cUnable to load MySQL config, because the username is not given, it's necessary.");
             }
 
             // ---------- Load PASSWORD ----------
-            if (configuration.get("server.connections.mysql.password") != null) {
+            if (configuration.getString("server.connections.mysql.password") != null) {
                 this.db_password = configuration.getString("server.connections.mysql.password");
             } else {
                 getLogger().log(Level.FINER, "You haven set a mysql password. This can work, but it's highly recommended to use one!!");
@@ -189,12 +197,54 @@ public final class Servermanager extends Plugin {
                 this.disableDefaultBungeeCommands = true;
             }
 
+            // ---------- Load message of the day ----------
+            if (configuration.getString("server.motd") != null) {
+                this.motd = ChatColor.translateAlternateColorCodes('&', configuration.getString("server.motd"));
+            } else {
+                getLogger().log(Level.FINER, "You don't have a MOTD set. We are using the default one. You can change that via the settings.");
+            }
+
+            // ---------- Load max players ----------
+            if (configuration.get("server.maxProxyPlayerCount") != null) {
+                this.maxp = configuration.getInt("server.maxProxyPlayerCount");
+            } else {
+                getLogger().log(Level.FINER, "You don't have a max player count set. We are using the default one. You can change that via the settings.");
+            }
+
 
         } catch (IOException e) {
             e.printStackTrace();
             getProxy().stop("§4ERROR! §cUnable to load the configuration file! Please contact the developer with log details, if you don't know what to do!");
         }
 
+
+    }
+
+    public void saveMotdAndMaxP(String motd, int maxp) {
+        if (!getDataFolder().exists()) {
+            getDataFolder().mkdir();
+        }
+
+        File configFile = new File(getDataFolder(), "config.yml");
+        if (!configFile.exists()) {
+            try {
+                Files.copy(getResourceAsStream("config.yml"), configFile.toPath());
+                configFile = new File(getDataFolder(), "config.yml");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            configuration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(configFile);
+            configuration.set("server.motd", motd);
+            this.motd = motd;
+            configuration.set("server.maxProxyPlayerCount", maxp);
+            this.maxp = maxp;
+            ConfigurationProvider.getProvider(YamlConfiguration.class).save(configuration, configFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -237,5 +287,21 @@ public final class Servermanager extends Plugin {
 
     public IPValidationUtils getIpValidationUtils() {
         return ipValidationUtils;
+    }
+
+    public String getMotd() {
+        return motd;
+    }
+
+    public void setMotd(String motd) {
+        this.motd = motd;
+    }
+
+    public int getMaxp() {
+        return maxp;
+    }
+
+    public void setMaxp(int maxp) {
+        this.maxp = maxp;
     }
 }

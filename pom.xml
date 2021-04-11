@@ -17,6 +17,13 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <distributionManagement>
+        <repository>
+            <id>craftedcrime-repo</id>
+            <url>https://nexus.ianfd.de/releases/</url>
+        </repository>
+    </distributionManagement>
+
     <build>
         <defaultGoal>clean package</defaultGoal>
         <plugins>
@@ -40,7 +47,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <createDependencyReducedPom>true</createDependencyReducedPom>
                         </configuration>
                     </execution>
                 </executions>
@@ -61,7 +68,7 @@
         </repository>
         <repository>
             <id>ianfd</id>
-            <url>https://nexus.ianfd.de/repository/ianfd/</url>
+            <url>https://nexus.ianfd.de/releases/</url>
         </repository>
     </repositories>
 
@@ -81,7 +88,7 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>3.14.7</version>
+            <version>3.14.9</version>
         </dependency>
         <dependency>
             <groupId>com.squareup.retrofit2</groupId>
@@ -95,8 +102,8 @@
         </dependency>
         <dependency>
             <groupId>de.craftedcrime.infrastructure.servermanager</groupId>
-            <artifactId>middleware</artifactId>
-            <version>1.0.0</version>
+            <artifactId>smwemiddleware</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
 </project>

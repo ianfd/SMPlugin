@@ -6,6 +6,7 @@ server:
   orchestration: false
   connections:
     # This is the database connection config. The database is used to store data about the registered servers.
+    # ---------------------- MYSQL Settings ----------------------
     mysql:
       # The hostname is the IP of the server. E.g.: 192.168.0.1, if the mysql-server is running on the same server as the BungeeCord-server you can use 'localhost' as the hostname.
       hostname: 10.10.2.2
@@ -17,6 +18,7 @@ server:
       username:
       # The password for the user above. It's recommended to use one!
       password:
+    # ---------------------- Redis Settings ----------------------
     # This is used for the orchestration feature of the ServerManager and if you're using the ServerManager on spigot. Without a redis server, this the ServerManager Plugin (on spigot) is read-only!
     redis:
       # The hostname is the IP of the server. E.g.: 192.168.0.1, if the redis-server is running on the same server as the BungeeCord-server you can use 'localhost' as the hostname. (TBD)
@@ -31,6 +33,10 @@ server:
   disable_default_bungeecord_commands: true
   # Enable the possibility to edit your ServerManager configuration via the web editor. Help available under: https://sm.craftedcrime.de/help
   enable_web_editor: false
+  # set the message of the day of your BungeeCord server
+  motd:
+  # Set the max player count shown when you ping the BungeeCord.
+  maxProxyPlayerCount:
 stats:
   # !! This feature is currently not implemented !!
   # Stats are used to determine how many players and servers are using this plugin. (TBD)
