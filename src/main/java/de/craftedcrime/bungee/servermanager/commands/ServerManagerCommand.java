@@ -100,7 +100,7 @@ public class ServerManagerCommand extends Command {
 
     private void displayHelp(ProxiedPlayer proxiedPlayer) {
         proxiedPlayer.sendMessage(new TextComponent("§8-=-=-=-=- §7| §a§lServerManager §r§7| §8-=-=-=-=-"));
-        proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm create §7<§bservername§7> §7<§bIP-Address§7> §7<§bPort§7> §7<§bAccess Level§7> §7<§blobby true/false§7>", "sm create"
+        proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm create §7<§bservername§7> §7<§bIP-Address§7> §7<§bPort§7> §7<§bAccess Level§7> §7<§blobby true/false§7>", "/sm create"
                 , "§cSuggest into chat."));
         proxiedPlayer.sendMessage(new TextComponent("§a §b §a §b §8-> §6Creates a new server in the bungeecord management context"));
         proxiedPlayer.sendMessage(servermanager.getGeneralUtils().getCommandSuggestion("§8- §d/sm activate §7<§bservername§7>", "/sm activate", "§aSuggest into chat."));

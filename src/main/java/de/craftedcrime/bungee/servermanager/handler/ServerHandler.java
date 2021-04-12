@@ -201,10 +201,14 @@ public class ServerHandler {
      * @param servername    servername you want to delete
      */
     public void deleteServer(ProxiedPlayer proxiedPlayer, String servername) {
+        deleteServer(proxiedPlayer, servername, servermanager.getLobbyMap().containsKey(servername));
+    }
+
+    public void deleteServer(ProxiedPlayer proxiedPlayer, String servername, boolean isLobby) {
         // general functionality of this method
         if (serverAlreadyRegistered(servername)) {
             if (serverIsOrchestrated(servername)) {
-                boolean isLobby = servermanager.getLobbyMap().containsKey(servername);
+
                 if (isLobby) {
                     servermanager.getLogger().log(Level.INFO, "Attention, you're about to delete a lobby!");
                     if (servermanager.getLobbyMap().size() == 1) {

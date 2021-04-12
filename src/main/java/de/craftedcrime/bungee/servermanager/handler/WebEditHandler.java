@@ -34,9 +34,9 @@ public class WebEditHandler {
         }
         proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aPlease wait ... we are preparing the editor for you."));
         try {
-            Response<KeySecretPair> response = servermanager.getWebEditClient().webEditService.startEditing(new ConfigUpload(servermanager.getMotd(),
-                    servermanager.getMaxp(), servermanager.getLobbyMap(),
-                    servermanager.getNoLobbiesMap())).execute();
+            Response<KeySecretPair> response = servermanager.getWebEditClient().webEditService.startEditing(new ConfigUpload(servermanager.getMotd().replace('§', '&'),
+                    servermanager.getMaxp(), servermanager.getMySQLHandler().loadAllLobbies(),
+                    servermanager.getMySQLHandler().loadAllNonLobbies())).execute();
             if (response.isSuccessful() && response.body() != null) {
                 lastUploadedConfig = System.currentTimeMillis();
                 sendCreationMessage(proxiedPlayer, response.body());
@@ -104,18 +104,19 @@ public class WebEditHandler {
             proxiedPlayer.sendMessage(new TextComponent("§8| §aServerManager §8| §aYou're starting the import process from your new config. " +
                     "\nDuring this process all players are going to be kicked!" +
                     "\nYou can see more information about the import process in the BungeeCord console!"));
-            proxiedPlayer.disconnect(new TextComponent("§eThe import process has started! \n§aSee more information in the server logs."));
-            for (ProxiedPlayer pp : servermanager.getProxy().getPlayers()) {
-                pp.disconnect(new TextComponent("§eWe are updating the network for you! \n§aPlease wait a few seconds before reconnecting!"));
-            }
+            //proxiedPlayer.disconnect(new TextComponent("§eThe import process has started! \n§aSee more information in the server logs."));
+            //for (ProxiedPlayer pp : servermanager.getProxy().getPlayers()) {
+            //    pp.disconnect(new TextComponent("§eWe are updating the network for you! \n§aPlease wait a few seconds before reconnecting!"));
+            //}
 
             servermanager.getProxy().getConsole().sendMessage(new TextComponent("§8-=-=-=-=- §7| §a§lServerManager §r§7| §8-=-=-=-=-"));
             servermanager.getProxy().getConsole().sendMessage(new TextComponent("§aStarting the import process!"));
             servermanager.getProxy().getConsole().sendMessage(new TextComponent("§8 -> §eYour MOTD: §7'§r" + ChatColor.translateAlternateColorCodes('&', configEdit.getMotdBungee()) + "§7'"));
             servermanager.getProxy().getConsole().sendMessage(new TextComponent("§8 -> §eYour shown player count: §7'§6" + configEdit.getMaxPlayerBungee() + "§7'"));
             servermanager.getProxy().getConsole().sendMessage(new TextComponent("§8 -> §eUnloading all servers..."));
-            removeAllRegisteredServers();
+            //removeAllRegisteredServers();
             servermanager.getProxy().getConsole().sendMessage(new TextComponent("§8 -> §aCreating new servers..."));
+            // is prove, works even when players are online
             for (ServerEdit s : configEdit.getEditList()) {
                 if (s.getEditAction() == EditAction.CREATE) {
                     if (!servermanager.getMySQLHandler().serverExists(s.getServerObject().getServerName())) {
@@ -125,7 +126,7 @@ public class WebEditHandler {
                         if (!s.isLobby()) lobby = "§bNON-LOBBY";
                         servermanager.getProxy().getConsole().sendMessage(new TextComponent("§a+ §8 | §7'§b" + s.getServerObject().getServerName() + "§7' §8| " + active + " §8| §b" + s.getServerObject().getMaxPlayers() + "§e players §8| §7'" + lobby + "§7'"));
                         servermanager.getProxy().getConsole().sendMessage(new TextComponent("§a§b§a §8-> §7'§b" + s.getServerObject().getIpAddress() + "§7' §8| §7'§b" + s.getServerObject().getPort() + "§7' §8| §7'§b" + s.getServerObject().getAccessType() + "§7'"));
-                        servermanager.getMySQLHandler().addServer(s.getServerObject(), s.isLobby());
+                        servermanager.getServerHandler().addServer(proxiedPlayer, s.getServerObject(), s.isLobby());
                     } else {
                         servermanager.getProxy().getConsole().sendMessage(new TextComponent("§4⚡ §8| §cError, creating a server with the name §7'§b" + s.getServerObject().getServerName() + "§7'§c this server does already exists." +
                                 "If this is wrong please try again."));
@@ -133,10 +134,19 @@ public class WebEditHandler {
                 }
             }
             servermanager.getProxy().getConsole().sendMessage(new TextComponent("§8 -> §aModifying existing servers..."));
+            // not so prove, when players are online
             for (ServerEdit s : configEdit.getEditList()) {
                 if (s.getEditAction() == EditAction.EDIT) {
                     if (s.getServerObject().getServerId() != 0) {
+                        servermanager.getServerHandler().sendToFallbackServer(s.getServerObject().getServerName());
                         servermanager.getMySQLHandler().modifyServer(s.getServerObject(), s.isLobby());
+                        if (s.isLobby()) {
+                            servermanager.getLobbyMap().remove(s.getServerObject().getServerName());
+                            servermanager.getLobbyMap().put(s.getServerObject().getServerName(), s.getServerObject());
+                        } else {
+                            servermanager.getNoLobbiesMap().remove(s.getServerObject().getServerName());
+                            servermanager.getNoLobbiesMap().put(s.getServerObject().getServerName(), s.getServerObject());
+                        }
                         servermanager.getProxy().getConsole().sendMessage(new TextComponent("§e✎ §8| §aSaving modified server: §b#" + s.getServerObject().getServerId() + "§e."));
                     } else {
                         servermanager.getProxy().getConsole().sendMessage(new TextComponent("§4⚡ §8| §cError, couldn't modify a server with the ID §7'§b0§7'§c."));
@@ -144,16 +154,17 @@ public class WebEditHandler {
                 }
             }
             servermanager.getProxy().getConsole().sendMessage(new TextComponent("§8 -> §aDeleting existing servers..."));
+            // deleting an existing server
             for (ServerEdit s : configEdit.getEditList()) {
                 if (s.getEditAction() == EditAction.DELETE) {
                     servermanager.getProxy().getConsole().sendMessage(new TextComponent("§c- §8| §aDeleting the server: §b#" + s.getServerObject().getServerId()));
-                    servermanager.getMySQLHandler().deleteServerById(s.getServerObject().getServerId(), s.isLobby());
+                    servermanager.getServerHandler().deleteServer(proxiedPlayer, s.getServerObject().getServerName(), s.isLobby());
                 }
             }
             servermanager.getProxy().getConsole().sendMessage(new TextComponent("§8 -> §aReloading lobbies and non-lobbies!"));
             servermanager.saveMotdAndMaxP(configEdit.getMotdBungee().replace('&', '§'), configEdit.getMaxPlayerBungee());
-            servermanager.getServerHandler().initAllLobbies();
-            servermanager.getServerHandler().initAllNonLobbies();
+            //servermanager.getServerHandler().initAllLobbies();
+            //servermanager.getServerHandler().initAllNonLobbies();
         } else {
             proxiedPlayer.sendMessage(new TextComponent("saving MOTD: ' " + configEdit.getMotdBungee() + " '"));
             proxiedPlayer.sendMessage(new TextComponent("saving max players: ' " + configEdit.getMaxPlayerBungee() + " '"));

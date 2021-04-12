@@ -73,9 +73,11 @@ anonymously and is used to improve the plugin.
 
 ### Stuff that's going to be added to this plugin in the future.
 
-- check if the server you're trying to join is actually online (message when trying to join)
 - orchestration feature (self activation of servers)
-- webeditor
+- webeditor prettier
+- ingame MOTD edititing
+- setting custom player count
+- 
 
 
 

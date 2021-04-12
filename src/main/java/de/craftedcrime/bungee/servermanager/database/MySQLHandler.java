@@ -46,7 +46,7 @@ public class MySQLHandler {
             return DriverManager.getConnection("jdbc:mysql://" + db_url + "/" + db_name + "?user=" + db_username + "&password=" + db_password);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
-            servermanager.getLogger().log(Level.WARNING, "[Connect To Database] Failed to connect to the database.");
+            servermanager.getLogger().log(Level.WARNING, "[Connect To Database] Failed to connect to the database. If this is the first time you start the server, edit the config.yml file in the plugins folder!");
             servermanager.getProxy().stop("[Connect To Database] A non valid database connection has been entered. Please revisit you settings.");
         }
         return null;
@@ -271,6 +271,7 @@ public class MySQLHandler {
     }
 
     public void modifyServer(ServerObject serverObject, boolean lobby) {
+        // check object for failures
         if (serverObject.getServerName().isEmpty() || serverObject.getServerName().isBlank()) {
             servermanager.getLogger().log(Level.WARNING, "Name is not valid!");
             return;
@@ -291,6 +292,7 @@ public class MySQLHandler {
             servermanager.getLogger().log(Level.WARNING, "You have to enter an access type.");
             return;
         }
+        // now the real one exists
         if (serverExistsByID(serverObject.getServerId(), lobby)) {
             try {
                 PreparedStatement preparedStatement;

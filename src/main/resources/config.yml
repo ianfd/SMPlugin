@@ -1,5 +1,6 @@
 # The default config for the ServerManager (Enables possibility to orchestrate servers)
 # Documentation and Tutorials are available under: URL TBA
+version: 1.0
 server:
   # !! This feature is currently not implemented !!
   # This enables the orchestration feature of ServerManager. (TBD) PLEASE READ THIS BEFORE YOU ACTIVATE THIS FEATURE -> URL TBA

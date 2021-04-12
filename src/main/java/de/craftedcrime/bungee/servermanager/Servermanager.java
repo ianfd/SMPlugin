@@ -241,7 +241,7 @@ public final class Servermanager extends Plugin {
             this.motd = motd;
             configuration.set("server.maxProxyPlayerCount", maxp);
             this.maxp = maxp;
-            ConfigurationProvider.getProvider(YamlConfiguration.class).save(configuration, configFile);
+            ConfigurationProvider.getProvider(YamlConfiguration.class).save(configuration, new File(getDataFolder(), "config.yml"));
         } catch (IOException e) {
             e.printStackTrace();
         }
